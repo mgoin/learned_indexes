@@ -36,7 +36,7 @@ int main()
   std::cerr << "min = " << vec[0] << std::endl;
   std::cerr << "max = " << vec[vec.size() - 1] << std::endl;
 
-  FILE *fout = fopen("lognormal.sorted.190M", "wb");
+  FILE *fout = fopen("../data/lognormal.sorted.190M", "wb");
   for (int x : vec) {
     fwrite(&x, sizeof(x), 1, fout);
   }

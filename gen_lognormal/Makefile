@@ -2,7 +2,7 @@ source = gen_lognormal.cpp
 objects = 
 executables = gen_lognormal
 CXX = g++
-LANGFLAGS = -std=c++14
+LANGFLAGS = -std=c++11
 CXXFLAGS = -Ofast $(LANGFLAGS) -pedantic -Wall -Wextra -Weffc++
 LIBS =
 
