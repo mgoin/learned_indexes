@@ -11,21 +11,20 @@ import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
 from BTrees.IIBTree import IIBTree
-
-sys.path.append('../')
-from models import Learned_FC
+from models import Learned_FC, Learned_Res
 
 class Testing_Framework():
-    def __init__(self, model, distribution):
+    def __init__(self, model, distribution, sample_size):
         self.model = model
         self.test_distribution = distribution
+        self.sample_size = sample_size
         self.train_time = []
         self.inference_time = []
 
         self.load_test_data()
 
     def load_test_data(self):
-        self.data = load_data(self.test_distribution)
+        self.data = load_data(self.test_distribution, self.sample_size)
 
     def run_tests(self, num_tests=1):
         for i in range(num_tests):
@@ -44,7 +43,7 @@ class Testing_Framework():
         toc = time.time()
         self.train_time.append(toc-tic)
 
-    def time_inference(self, samples = 100000):
+    def time_inference(self, samples=100000):
         tic = time.time()
 
         val = np.random.choice(self.data, samples)
@@ -58,7 +57,8 @@ def main(argv):
     # Parse the arguments
     parser = argparse.ArgumentParser(description="""Run tests""")
     parser.add_argument('-m', '--model', help='name of model to test', default='btree')
-    parser.add_argument('-d', '--distribution', help='name of distribution to test', default='random')
+    parser.add_argument('-d', '--distribution', help='name of distribution to test', default='lognormal')
+    parser.add_argument('-s', '--sample_size', help='number of samples to load for each data', default=10000000)
     args = parser.parse_args(argv[1:])
 
     # Check the parameters
@@ -73,7 +73,7 @@ def main(argv):
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()
 
-    testing_framework = Testing_Framework(model=model, distribution=Distribution.from_str(args.distribution))
+    testing_framework = Testing_Framework(model=model, distribution=Distribution.from_str(args.distribution), sample_size=int(args.sample_size))
     testing_framework.run_tests()
     print('Training {}'.format(testing_framework.train_time))
     print('Inference {}'.format(testing_framework.inference_time))

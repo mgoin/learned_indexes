@@ -28,7 +28,7 @@ class Learned_FC:
     # Add an item. Return 1 if the item was added, or 0 otherwise.
     def insert(self, key, value):
         # Only accept key if is is greater than all others (append)
-        # if np.any(self.keys[:, 0] >= key):
+        # if np.any(self.keys >= key):
         #     return 0
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
@@ -46,8 +46,9 @@ class Learned_FC:
     # Add the items from the given collection.
     def update(self, collection):
         # Add items to model
-        for i in collection:
-            self.insert(i[0], i[1])
+        k, v = zip(*collection)
+        self.keys = np.append(self.keys, k)
+        self.values = np.append(self.values, v)
         # Retrain model
         self.model = self.train(self.model)
 
@@ -72,7 +73,7 @@ class Learned_FC:
 
     # Return true if the model contains the given key.
     def has_key(key):
-        return np.any(self.keys[:, 0] == key)
+        return np.any(self.keys == key)
 
     # Returns get(key)
     def __getitem__(self, key):
@@ -98,13 +99,13 @@ class Learned_FC:
         self.model = Model(input_layer, output_layer)
         # Compile model and save initial weights for retraining
         self.model.compile(optimizer='adam', loss='mean_squared_error')
-        self.model.save_weights('learned_fc_init.h5')
+        self.model.save_weights('temp_learned_fc_init.h5')
 
     def train(self, model):
-        model.load_weights('learned_fc_init.h5')
-        model.fit(self.keys, range(self.values.size),
+        model.load_weights('temp_learned_fc_init.h5')
+        model.fit(self.keys, self.values,
                   epochs=self.epochs, batch_size=self.batch_size,
-                  shuffle=True, verbose=2)
+                  shuffle=True, verbose=1)
         return model
 
     def predict(self, x, batch_size=1000):

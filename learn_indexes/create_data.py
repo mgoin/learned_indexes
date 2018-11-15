@@ -91,10 +91,10 @@ def create_data(distribution, data_size=SIZE):
         data.tofile(f)
 
 
-def load_data(distribution):
+def load_data(distribution, sample_size=190000000):
     with open(filePath[distribution], 'r') as f:
         data = np.fromfile(f, dtype=np.uint32)
-    return data
+    return np.random.choice(data, size=sample_size)
 
 
 def graph_data(data):
