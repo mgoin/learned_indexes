@@ -10,8 +10,7 @@ import random
 import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
-from BTrees.IIBTree import IIBTree
-from models import Learned_FC, Learned_Res
+from models import Learned_FC, Learned_Res, BTree
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size):
@@ -49,7 +48,8 @@ class Testing_Framework():
         val = np.random.choice(self.data, samples)
         found = []
         for v in val:
-           self.model.get(v)
+            x = self.model.predict(v)
+            self.model.get(v, x)
         toc = time.time()
         self.inference_time.append((toc-tic)/100)
 
@@ -66,7 +66,7 @@ def main(argv):
         print('Model must be specifed', file=sys.stderr)
         exit()
     elif args.model in ('btree'):
-        model = IIBTree()
+        model = BTree()
     elif args.model in ('learned_fc'):
         model = Learned_FC()
     else:

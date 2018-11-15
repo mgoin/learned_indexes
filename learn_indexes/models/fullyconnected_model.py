@@ -33,7 +33,7 @@ class Learned_FC:
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
         return 1
-    
+
     # Remove an item. Return 1 if removed successful, or 0 otherwise.
     def remove(self, key):
         index, = np.where(self.keys == key)
@@ -53,9 +53,9 @@ class Learned_FC:
         self.model = self.train(self.model)
 
     # Return the value or the default if the key is not found.
-    def get(self, key):
+    def get(self, key, guess):
         # Get estimate position from the model
-        pos = self.predict(key)
+        pos = guess
 
         # Search locally for the key
         k = self.keys[pos]
@@ -93,7 +93,7 @@ class Learned_FC:
         x = input_layer
         for num_neurons in self.hidden_layers:
             x = Dense(num_neurons, activation=self.hidden_activation)(x)
-        
+
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
