@@ -11,7 +11,7 @@ import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
 from BTrees.IIBTree import IIBTree
-from models import Learned_FC, Learned_Res
+from models import Learned_Model
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size):
@@ -51,13 +51,13 @@ class Testing_Framework():
         for v in val:
            self.model.get(v)
         toc = time.time()
-        self.inference_time.append((toc-tic)/100)
+        self.inference_time.append((toc-tic)/samples)
 
 def main(argv):
     # Parse the arguments
     parser = argparse.ArgumentParser(description="""Run tests""")
     parser.add_argument('-m', '--model', help='name of model to test', default='btree')
-    parser.add_argument('-d', '--distribution', help='name of distribution to test', default='lognormal')
+    parser.add_argument('-d', '--distribution', help='name of distribution to test', default='random')
     parser.add_argument('-s', '--sample_size', help='number of samples to load for each data', default=10000000)
     args = parser.parse_args(argv[1:])
 
@@ -68,7 +68,9 @@ def main(argv):
     elif args.model in ('btree'):
         model = IIBTree()
     elif args.model in ('learned_fc'):
-        model = Learned_FC()
+        model = Learned_Model(network_type='fc')
+    elif args.model in ('learned_res'):
+        model = Learned_Model(network_type='res')
     else:
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()
