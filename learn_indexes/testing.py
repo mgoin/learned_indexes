@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
 from BTrees.IIBTree import IIBTree
 
+sys.path.append('../')
+from models import Learned_FC
+
 class Testing_Framework():
     def __init__(self, model, distribution):
         self.model = model
@@ -64,6 +67,8 @@ def main(argv):
         exit()
     elif args.model in ('btree'):
         model = IIBTree()
+    elif args.model in ('learned_fc'):
+        model = Learned_FC()
     else:
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()

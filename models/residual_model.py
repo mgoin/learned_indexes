@@ -1,4 +1,4 @@
-from keras import layers
+from keras.layers import Input, Dense
 from keras.models import Model
 import numpy as np
 import bisect
@@ -21,17 +21,17 @@ class Learned_Res:
 
     # Remove all items and reset model
     def clear(self):
-        self.keys = np.array()
-        self.values = np.array()
+        self.keys = np.empty(0, dtype=int)
+        self.values = np.empty(0, dtype=int)
         self.build_model()
 
     # Add an item. Return 1 if the item was added, or 0 otherwise.
     def insert(self, key, value):
         # Only accept key if is is greater than all others (append)
-        if np.any(self.keys[:, 0] >= key):
-            return 0
-        np.append(self.keys, key)
-        np.append(self.values, value)
+        # if np.any(self.keys[:, 0] >= key):
+        #     return 0
+        self.keys = np.append(self.keys, key)
+        self.values = np.append(self.values, value)
         return 1
     
     # Remove an item. Return 1 if removed successful, or 0 otherwise.
@@ -46,8 +46,8 @@ class Learned_Res:
     # Add the items from the given collection.
     def update(self, collection):
         # Add items to model
-        for key in collection:
-            self.insert(key, collection[key])
+        for i in collection:
+            self.insert(i[0], i[1])
         # Retrain model
         self.model = self.train(self.model)
 
@@ -61,7 +61,7 @@ class Learned_Res:
         left_bound = pos-self.search_radius
         right_bound = pos+self.search_radius
         while k != key:
-            i = np.where(self.keys[left_bound:right_bound] == key])[0]
+            i = np.where(self.keys[left_bound:right_bound] == key)[0]
             if i.size == 0:
                 left_bound -= self.search_radius
                 right_bound += self.search_radius
@@ -90,12 +90,10 @@ class Learned_Res:
         input_layer = Input(shape=(1,))
 
         x = input_layer
-        for i, num_neurons in enumerate(self.hidden_layers):
-            # if i % 2 == 0:
-            #     x = layers.add()
-            x = layers.Dense(num_neurons, activation=self.hidden_activation)(x)
+        for num_neurons in self.hidden_layers:
+            x = Dense(num_neurons, activation=self.hidden_activation)(x)
         
-        output_layer = layers.Dense(1, activation='relu')(x)
+        output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
         # Compile model and save initial weights for retraining
@@ -106,7 +104,7 @@ class Learned_Res:
         model.load_weights('learned_res_init.h5')
         model.fit(self.keys, range(self.values.size),
                   epochs=self.epochs, batch_size=self.batch_size,
-                  shuffle=True, verbose=1)
+                  shuffle=True, verbose=2)
         return model
 
     def predict(self, x, batch_size=1000):
