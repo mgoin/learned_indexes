@@ -54,8 +54,7 @@ def create_data(distribution, data_size=SIZE):
 
     def random_sample(size):
         if distribution == Distribution.RANDOM:
-            data = np.arange(data_size)
-            np.random.shuffle(data)
+            data = np.random.choice(data_size*2, size)
         elif distribution == Distribution.BINOMIAL:
             data = np.random.binomial(100, 0.5, size=size)/data_size
         elif distribution == Distribution.POISSON:
