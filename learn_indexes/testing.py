@@ -10,8 +10,12 @@ import random
 import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
+<<<<<<< HEAD
 from BTrees.IIBTree import IIBTree
 from models import Learned_Model
+=======
+from models import Learned_FC, Learned_Res, BTree
+>>>>>>> a1ff2d7f0ba23bcb773ec572bcc7b720a5742fb5
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size):
