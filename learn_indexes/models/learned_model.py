@@ -44,7 +44,7 @@ class Learned_Model:
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
         return 1
-    
+
     # Remove an item. Return 1 if removed successful, or 0 otherwise.
     def remove(self, key):
         index, = np.where(self.keys == key)
@@ -64,7 +64,7 @@ class Learned_Model:
         self.model = self.train(self.model)
 
     # Return the value or the default if the key is not found.
-    def get(self, key):
+    def get(self, key, guess):
         # Get estimate position from the model
         normalized_key = key / float(np.max(self.keys))
         normalized_pos = self.predict(np.full(1, normalized_key))[0][0]
@@ -122,7 +122,7 @@ class Learned_Model:
         x = input_layer
         for num_neurons in self.hidden_layers:
             x = Dense(num_neurons, activation=self.hidden_activation)(x)
-        
+
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
@@ -133,6 +133,7 @@ class Learned_Model:
     def build_Res(self):
         input_layer = Input(shape=(1,))
 
+<<<<<<< HEAD:learn_indexes/models/learned_model.py
         x = input_layer
         for i, num_neurons in enumerate(self.hidden_layers):
             if i%2 == 1:
@@ -152,3 +153,7 @@ class Learned_Model:
         return self.max_error
     def get_min_error(self):
         return self.min_error
+=======
+    def predict(self, x, batch_size=1000):
+        return self.model.predict(x, batch_size)
+>>>>>>> a1ff2d7f0ba23bcb773ec572bcc7b720a5742fb5:learn_indexes/models/fullyconnected_model.py

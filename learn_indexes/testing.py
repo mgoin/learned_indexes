@@ -49,7 +49,8 @@ class Testing_Framework():
         val = np.random.choice(self.data, samples)
         found = []
         for v in val:
-           self.model.get(v)
+            x = self.model.predict(v)
+            self.model.get(v, x)
         toc = time.time()
         self.inference_time.append((toc-tic)/samples)
 
@@ -66,7 +67,7 @@ def main(argv):
         print('Model must be specifed', file=sys.stderr)
         exit()
     elif args.model in ('btree'):
-        model = IIBTree()
+        model = BTree()
     elif args.model in ('learned_fc'):
         model = Learned_Model(network_type='fc')
     elif args.model in ('learned_res'):
