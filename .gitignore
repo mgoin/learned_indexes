@@ -1,1 +1,6 @@
 *.pyc
+__pycache__/
+.idea/
+data/
+gen_lognormal/gen_lognormal
+*.o
