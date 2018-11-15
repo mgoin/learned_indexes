@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
 """Package for creating test data."""
 
+import argparse
 from enum import Enum
 import numpy as np
+import sys
+import os
 import csv
 import random
 import seaborn as sns
@@ -17,14 +21,29 @@ class Distribution(Enum):
     NORMAL = 4
     LOGNORMAL = 5
 
+    @staticmethod
+    def from_str(label):
+        if label in ('random'):
+            return Distribution.RANDOM
+        elif label in ('exponential'):
+            return Distribution.EXPONENTIAL
+        elif label in ('normal'):
+            return Distribution.NORMAL
+        elif label in ('lognormal'):
+            return Distribution.LOGNORMAL
+        else:
+            raise NotImplementedError
+
+dataPath = "../data/"
+
 # store path
 filePath = {
-    Distribution.RANDOM: "../data/random",
-    Distribution.BINOMIAL: "../data/binomial",
-    Distribution.POISSON: "../data/poisson",
-    Distribution.EXPONENTIAL: "../data/exponential",
-    Distribution.NORMAL: "../data/normal",
-    Distribution.LOGNORMAL: "../data/lognormal"
+    Distribution.RANDOM: dataPath + "random",
+    Distribution.BINOMIAL: dataPath + "binomial",
+    Distribution.POISSON: dataPath + "poisson",
+    Distribution.EXPONENTIAL: dataPath + "exponential",
+    Distribution.NORMAL: dataPath + "normal",
+    Distribution.LOGNORMAL: dataPath + "lognormal"
 }
 
 
@@ -48,36 +67,29 @@ def create_data(distribution, data_size=SIZE):
         else:
             data = np.random.normal(0.5, 0.1, size=size)
 
-        # if size > 1:
-        #     print(np.max(data))
-        #     sns.distplot(data)
-        #     plt.show()
-
         if distribution != Distribution.RANDOM:
             data = data*scale
-
-        # if size > 1:
-        #     sns.distplot(data)
-        #     plt.show()
 
         return data.astype(np.uint32)
 
     data = random_sample(data_size)
-    print('first pass {}'.format(data_size))
+    print('first pass size={}'.format(data_size))
     data = np.unique(data)
     print('Unique {}'.format(data.size))
 
     while data.size < data_size:
         retry += 1
-        data = np.append(data, random_sample((data_size-data.size)*2))
+        data = np.append(data, random_sample((data_size-data.size)))
         data = np.unique(data)
-        print("Retrys: {} {}".format(retry, data.size))
+        print("Retry: {}".format(retry))
     data = data[:data_size]
+
+    if not os.path.exists(dataPath):
+        os.makedirs(dataPath)
 
     with open(filePath[distribution], 'w') as f:
         data.tofile(f)
 
-    print("Retrys: {}".format(retry))
 
 def load_data(distribution):
     with open(filePath[distribution], 'r') as f:
@@ -89,7 +101,13 @@ def graph_data(data):
     sns.distplot(data)
 
 
-if __name__ == '__main__':
+def main(argv):
+    # Parse the arguments
+    parser = argparse.ArgumentParser(description="""Generate data for testing""")
+    parser.add_argument('-s', '--size', help='Size of data to generate', type=int, default=SIZE)
+    parser.add_argument('-g', '--graph', help='Graph generated data?', action='store_true')
+    args = parser.parse_args(argv[1:])
+
     dist = [
         Distribution.RANDOM,
         Distribution.EXPONENTIAL,
@@ -99,15 +117,14 @@ if __name__ == '__main__':
 
     for d in dist:
         print(d)
-        # create_data(d, data_size=10000)
-        create_data(d)
+        create_data(d, data_size=args.size)
 
-    # for d in dist:
-    #     data = load_data(d)
-    #     graph_data(data)
-    #     plt.show()
+    if args.graph:
+        for d in dist:
+            data = load_data(d)
+            graph_data(data)
+            plt.show()
 
-    # with open('../data/lognormal.sorted.190M', 'r') as f:
-    #     data = np.fromfile(f, dtype=np.uint32)
-    # graph_data(data)
-    # plt.show()
+
+if __name__ == '__main__':
+    main(sys.argv)
