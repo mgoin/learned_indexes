@@ -14,52 +14,85 @@ from BTrees.IIBTree import IIBTree
 from models import Learned_Model, BTree
 
 class Testing_Framework():
-    def __init__(self, model, distribution, sample_size):
+    def __init__(self, model, distribution, sample_size, train_percent, inference_samples):
         self.model = model
         self.test_distribution = distribution
         self.sample_size = sample_size
         self.train_time = []
-        self.inference_time = []
+        self.pre_insert_inference_time = []
+        self.insert_time = []
+        self.post_insert_inference_time = []
+        self.train_percent = train_percent
+        self.inference_samples = inference_samples
 
         self.load_test_data()
 
     def load_test_data(self):
         self.data = load_data(self.test_distribution, self.sample_size)
 
+    @property
+    def train_data(self):
+        return [(int(v), int(i)) for i, v in enumerate(self.data[:self.split_idx])]
+
+    @property
+    def insert_data(self):
+        return [(int(v), int(i+self.split_idx)) for i, v in enumerate(self.data[self.split_idx:])]
+
+    @property
+    def split_idx(self):
+        return int(len(self.data)*self.train_percent)
+
     def run_tests(self, num_tests=1):
         for i in range(num_tests):
             self.time_train()
-            self.time_inference()
+            self.time_inference(train_only=True)
+
+            if self.train_percent != 1.0:
+                self.time_insert()
+                self.time_inference()
 
     def time_train(self):
-        def items():
-            for i, v in enumerate(self.data):
-                yield (int(v), i)
-
         self.model.clear()
-
         tic = time.time()
-        self.model.update(list(items()))
+        self.model.update(self.train_data)
         toc = time.time()
         self.train_time.append(toc-tic)
 
-    def time_inference(self, samples=100000):
-        tic = time.time()
+    def time_inference(self, train_only=False):
 
-        val = np.random.choice(self.data, samples)
+        if train_only:
+            k, _ = zip(*self.train_data)
+            keys = np.random.choice(k, self.inference_samples)
+        else:
+            keys = np.random.choice(self.data, self.inference_samples)
+
         found = []
-        for v in val:
-            x = self.model.predict(v)
-            self.model.get(v, x)
+        tic = time.time()
+        for k in keys:
+            x = self.model.predict(k)
+            self.model.get(k, x)
         toc = time.time()
-        self.inference_time.append((toc-tic)/samples)
+
+        if train_only:
+            self.pre_insert_inference_time.append((toc-tic)/self.inference_samples)
+        else:
+            self.post_insert_inference_time.append((toc-tic)/self.inference_samples)
+
+    def time_insert(self):
+        tic = time.time()
+        self.model.update(self.insert_data)
+        toc = time.time()
+        self.insert_time.append(toc-tic)
 
 def main(argv):
     # Parse the arguments
     parser = argparse.ArgumentParser(description="""Run tests""")
     parser.add_argument('-m', '--model', help='name of model to test', default='btree')
     parser.add_argument('-d', '--distribution', help='name of distribution to test', default='random')
-    parser.add_argument('-s', '--sample_size', help='number of samples to load for each data', default=10000000)
+    parser.add_argument('-s', '--sample-size', help='number of samples to load for each data', default=10000000)
+    parser.add_argument('-t', '--train-percent', help='percent of data for initial training (the rest is used for insert)', default=1.0, type=float)
+    parser.add_argument('-n', '--number-of-tests', help='number of tests to run', default=1, type=int)
+    parser.add_argument('-i', '--inference-samples', help='Number of inferences used for timing', default=100000, type=int)
     args = parser.parse_args(argv[1:])
 
     # Check the parameters
@@ -79,10 +112,19 @@ def main(argv):
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()
 
-    testing_framework = Testing_Framework(model=model, distribution=Distribution.from_str(args.distribution), sample_size=int(args.sample_size))
-    testing_framework.run_tests()
+    testing_framework = Testing_Framework(model=model,
+                                          distribution=Distribution.from_str(args.distribution),
+                                          sample_size=int(args.sample_size),
+                                          train_percent=args.train_percent,
+                                          inference_samples=args.inference_samples,)
+
+    testing_framework.run_tests(args.number_of_tests)
+
+    print('Split Idx {}'.format(testing_framework.split_idx))
     print('Training {}'.format(testing_framework.train_time))
-    print('Inference {}'.format(testing_framework.inference_time))
+    print('Pre-Insert Inference {}'.format(testing_framework.pre_insert_inference_time))
+    print('Insert {}'.format(testing_framework.insert_time))
+    print('Post-Insert Inference {}'.format(testing_framework.post_insert_inference_time))
 
 if __name__ == '__main__':
     main(sys.argv)
