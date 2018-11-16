@@ -10,7 +10,7 @@ class Learned_Model:
                  hidden_activation='relu',
                  hidden_layers=[500, 500, 500, 500, 500],
                  training_method='full', search_method='linear',
-                 batch_size=10000, epochs=10):
+                 batch_size=100000, epochs=5):
         self.network_type = network_type
         self.hidden_activation = hidden_activation
         self.hidden_layers = hidden_layers
@@ -72,7 +72,7 @@ class Learned_Model:
             pos = utils.binary_search(self.keys, key, guess, self.get_max_error())
         else:
             raise Exception('Search method "{}" is not valid!'.format(self.search_method))
-            
+
         return self.values[pos]
 
     # Return true if the model contains the given key.
