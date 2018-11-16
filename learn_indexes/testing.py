@@ -68,15 +68,20 @@ class Testing_Framework():
 
         found = []
         tic = time.time()
-        for k in keys:
-            x = self.model.predict(k)
+        guesses = self.model.predict(keys)
+        toc = time.time()
+        guess_time = (toc-tic)/self.inference_samples
+
+        tic = time.time()
+        for k, x in zip(keys, guesses):
             self.model.get(k, x)
         toc = time.time()
+        get_time = (toc-tic)/self.inference_samples
 
         if train_only:
-            self.pre_insert_inference_time.append((toc-tic)/self.inference_samples)
+            self.pre_insert_inference_time.append((guess_time, get_time))
         else:
-            self.post_insert_inference_time.append((toc-tic)/self.inference_samples)
+            self.post_insert_inference_time.append((guess_time, get_time))
 
     def time_insert(self):
         tic = time.time()

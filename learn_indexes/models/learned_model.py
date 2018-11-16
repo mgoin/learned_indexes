@@ -44,7 +44,7 @@ class Learned_Model:
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
         return 1
-    
+
     # Remove an item. Return 1 if removed successful, or 0 otherwise.
     def remove(self, key):
         index, = np.where(self.keys == key)
@@ -121,15 +121,15 @@ class Learned_Model:
         # Key is just a value, make it an array
         if type(key) != np.ndarray:
             key = np.full(1, key)
-        
+
         normalized_key = key / float(np.max(self.keys))
 
         # Get estimate position from the model
         normalized_pos = self.model.predict(normalized_key, batch_size)
-        
+
         # Convert the normalized position back to index
         pos = (normalized_pos * float(np.max(self.values))).astype(int)
-        return pos
+        return pos.flatten()
 
     def build_FC(self):
         input_layer = Input(shape=(1,))
@@ -137,7 +137,7 @@ class Learned_Model:
         x = input_layer
         for num_neurons in self.hidden_layers:
             x = Dense(num_neurons, activation=self.hidden_activation)(x)
-        
+
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
@@ -153,9 +153,9 @@ class Learned_Model:
             if i%2 == 1:
                 if i > 1:
                     x = add([shortcut, x])
-                shortcut = x                
+                shortcut = x
             x = Dense(num_neurons, activation=self.hidden_activation)(x)
-        
+
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
