@@ -6,16 +6,16 @@ import models.utils as utils
 
 class Learned_Model:
     def __init__(self,
-                 search_radius=1000,
                  network_type='fc',
                  hidden_activation='relu',
                  hidden_layers=[500, 500, 500, 500, 500],
-                 training_method='full', batch_size=10000, epochs=10):
-        self.search_radius = search_radius
+                 training_method='full', search_method='linear',
+                 batch_size=10000, epochs=10):
         self.network_type = network_type
         self.hidden_activation = hidden_activation
         self.hidden_layers = hidden_layers
         self.training_method = training_method
+        self.search_method = search_method
         self.batch_size = batch_size
         self.epochs = epochs
 
@@ -44,7 +44,7 @@ class Learned_Model:
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
         return 1
-
+    
     # Remove an item. Return 1 if removed successful, or 0 otherwise.
     def remove(self, key):
         index, = np.where(self.keys == key)
@@ -65,16 +65,14 @@ class Learned_Model:
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
-        # Get estimate position from the model
-        normalized_key = key / float(np.max(self.keys))
-        normalized_pos = self.predict(np.full(1, normalized_key))[0][0]
-
-        # Convert the normalized position back to an
-        pos = int(normalized_pos * float(np.max(self.values)))
-
-        # Search locally for the key
-        pos = utils.linear_search(self.keys, key, pos)
-
+        # Search locally for the key, starting from the guess
+        if self.search_method == 'linear':
+            pos = utils.linear_search(self.keys, key, guess)
+        elif self.search_method == 'binary':
+            pos = utils.binary_search(self.keys, key, guess, self.get_max_error())
+        else:
+            raise Exception('Search method "{}" is not valid!'.format(self.search_method))
+            
         return self.values[pos]
 
     # Return true if the model contains the given key.
@@ -94,10 +92,12 @@ class Learned_Model:
         return self.remove(key)
 
     def train(self, model):
-        # load weights from initial build to clear network
-        model.load_weights('temp_learned_init.h5')
+        if self.training_method == 'full':
+            # load weights from initial build to clear network
+            model.load_weights('temp_learned_init.h5')
         x_train = self.keys / float(np.max(self.keys))
         y_train = self.values / float(np.max(self.values))
+        
         # train the network
         model.fit(x_train, y_train,
                   epochs=self.epochs, batch_size=self.batch_size,
@@ -113,8 +113,19 @@ class Learned_Model:
 
         return model
 
-    def predict(self, x, batch_size=1000):
-        return self.model.predict(x, batch_size)
+    def predict(self, key, batch_size=1000):
+        # Key is just a value, make it an array
+        if type(key) != np.ndarray:
+            key = np.full(1, key)
+        
+        normalized_key = key / float(np.max(self.keys))
+
+        # Get estimate position from the model
+        normalized_pos = self.model.predict(normalized_key, batch_size)[0]
+        
+        # Convert the normalized position back to index
+        pos = int(normalized_pos * float(np.max(self.values)))
+        return pos
 
     def build_FC(self):
         input_layer = Input(shape=(1,))
@@ -122,7 +133,7 @@ class Learned_Model:
         x = input_layer
         for num_neurons in self.hidden_layers:
             x = Dense(num_neurons, activation=self.hidden_activation)(x)
-
+        
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
@@ -133,7 +144,6 @@ class Learned_Model:
     def build_Res(self):
         input_layer = Input(shape=(1,))
 
-<<<<<<< HEAD:learn_indexes/models/learned_model.py
         x = input_layer
         for i, num_neurons in enumerate(self.hidden_layers):
             if i%2 == 1:
@@ -151,9 +161,6 @@ class Learned_Model:
 
     def get_max_error(self):
         return self.max_error
+
     def get_min_error(self):
         return self.min_error
-=======
-    def predict(self, x, batch_size=1000):
-        return self.model.predict(x, batch_size)
->>>>>>> a1ff2d7f0ba23bcb773ec572bcc7b720a5742fb5:learn_indexes/models/fullyconnected_model.py

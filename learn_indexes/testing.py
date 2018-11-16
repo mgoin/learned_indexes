@@ -10,12 +10,8 @@ import random
 import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
-<<<<<<< HEAD
 from BTrees.IIBTree import IIBTree
-from models import Learned_Model
-=======
-from models import Learned_FC, Learned_Res, BTree
->>>>>>> a1ff2d7f0ba23bcb773ec572bcc7b720a5742fb5
+from models import Learned_Model, BTree
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size):
@@ -71,10 +67,13 @@ def main(argv):
         print('Model must be specifed', file=sys.stderr)
         exit()
     elif args.model in ('btree'):
+        print("Testing with BTree model")
         model = BTree()
     elif args.model in ('learned_fc'):
+        print("Testing with Learned FC model")
         model = Learned_Model(network_type='fc')
     elif args.model in ('learned_res'):
+        print("Testing with Learned Res model")
         model = Learned_Model(network_type='res')
     else:
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
