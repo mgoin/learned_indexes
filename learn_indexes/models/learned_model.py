@@ -95,9 +95,10 @@ class Learned_Model:
         if self.training_method == 'full':
             # load weights from initial build to clear network
             model.load_weights('temp_learned_init.h5')
+
         x_train = self.keys / float(np.max(self.keys))
         y_train = self.values / float(np.max(self.values))
-        
+
         # train the network
         model.fit(x_train, y_train,
                   epochs=self.epochs, batch_size=self.batch_size,
@@ -105,11 +106,14 @@ class Learned_Model:
         # save weights of trained network
         model.save_weights('trained_learned.h5')
 
-        # calculate min and max error over the training set
-        y_predicted = self.predict(x_train)
-        errors = np.abs(y_predicted.flatten()-y_train)
-        self.max_error = np.max(errors)
-        self.min_error = np.min(errors)
+        # # calculate min and max error over the training set
+        # predicted_positions = self.predict(self.keys)
+        # y_predicted = np.empty(self.keys.size)
+        # for i, p in enumerate(predicted_positions):
+        #     y_predicted[i] = self.get(self.keys[i], p)
+        # errors = np.abs(y_predicted-y_train)
+        # self.max_error = np.max(errors)
+        # self.min_error = np.min(errors)
 
         return model
 
@@ -121,10 +125,10 @@ class Learned_Model:
         normalized_key = key / float(np.max(self.keys))
 
         # Get estimate position from the model
-        normalized_pos = self.model.predict(normalized_key, batch_size)[0]
+        normalized_pos = self.model.predict(normalized_key, batch_size)
         
         # Convert the normalized position back to index
-        pos = int(normalized_pos * float(np.max(self.values)))
+        pos = (normalized_pos * float(np.max(self.values))).astype(int)
         return pos
 
     def build_FC(self):
