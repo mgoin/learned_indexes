@@ -48,7 +48,7 @@ filePath = {
 
 
 def create_data(distribution, data_size=SIZE):
-    INT_MAX = np.iinfo(np.uint32).max
+    INT_MAX = np.iinfo(np.int32).max
     scale = INT_MAX
     retry = 0
 
@@ -69,7 +69,7 @@ def create_data(distribution, data_size=SIZE):
         if distribution != Distribution.RANDOM:
             data = data*scale
 
-        return data.astype(np.uint32)
+        return data.astype(np.int32)
 
     data = random_sample(data_size)
     print('first pass size={}'.format(data_size))
@@ -92,7 +92,7 @@ def create_data(distribution, data_size=SIZE):
 
 def load_data(distribution, sample_size=190000000):
     with open(filePath[distribution], 'r') as f:
-        data = np.fromfile(f, dtype=np.uint32)
+        data = np.fromfile(f, dtype=np.int32)
     return np.unique(np.random.choice(data, size=sample_size))
 
 
