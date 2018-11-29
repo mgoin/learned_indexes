@@ -11,7 +11,7 @@ import time
 import matplotlib.pyplot as plt
 from create_data import Distribution, load_data
 from BTrees.IIBTree import IIBTree
-from models import Learned_Model, BTree
+from models import Learned_Model, BTree, Hybrid
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size, train_percent, inference_samples):
@@ -113,6 +113,9 @@ def main(argv):
     elif args.model in ('learned_res'):
         print("Testing with Learned Res model")
         model = Learned_Model(network_type='res')
+    elif args.model in ('hybrid'):
+        print("Testing with Hybrid model")
+        model = Hybrid()
     else:
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()

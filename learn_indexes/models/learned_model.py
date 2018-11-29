@@ -4,6 +4,7 @@ import numpy as np
 import time
 import models.utils as utils
 
+
 class Learned_Model:
     def __init__(self,
                  network_type='fc',
@@ -76,7 +77,7 @@ class Learned_Model:
         return self.values[pos]
 
     # Return true if the model contains the given key.
-    def has_key(key):
+    def has_key(self, key):
         return np.any(self.keys == key)
 
     # Returns get(key)

@@ -3,6 +3,16 @@ import time
 import numpy as np
 import bisect
 
+
+def clamp(val, minval, maxval):
+    """Clamp a value in-between the min and max value."""
+    if val < minval:
+        return minval
+    if val > maxval:
+        return maxval
+    return val
+
+
 def binary_search(data, key, guess, error = 100):
     """Perform binary search to find the keys location in an array.
 
