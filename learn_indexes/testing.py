@@ -7,6 +7,7 @@ import os
 import random
 import sys
 import time
+import datetime
 from enum import Enum
 
 import matplotlib.pyplot as plt
@@ -60,6 +61,7 @@ class Testing_Framework():
             'post_insert_inference_time': self.post_insert_inference_time,
             'train_percent': self.train_percent,
             'inference_samples': self.inference_samples,
+            'collection_time': datetime.datetime.now(),
         }
         return results
 
