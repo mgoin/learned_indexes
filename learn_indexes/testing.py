@@ -2,16 +2,22 @@
 """Package for running tests."""
 
 import argparse
-from enum import Enum
-import numpy as np
-import sys
 import csv
+import os
 import random
+import sys
 import time
+from enum import Enum
+
 import matplotlib.pyplot as plt
-from create_data import Distribution, load_data
+import numpy as np
 from BTrees.IIBTree import IIBTree
+
+import utils.datastore as ds
+from create_data import Distribution, load_data
 from models import Learned_Model, BTree, Hybrid
+
+RESULTS_DIR = '../results'
 
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size, train_percent, inference_samples):
@@ -41,6 +47,26 @@ class Testing_Framework():
     @property
     def split_idx(self):
         return int(len(self.data)*self.train_percent)
+
+    @property
+    def results(self):
+        results = {
+            'model': self.model.results,
+            'test_distribution': self.test_distribution.name,
+            'sample_size': self.sample_size,
+            'train_time': self.train_time,
+            'pre_insert_inference_time': self.pre_insert_inference_time,
+            'insert_time': self.insert_time,
+            'post_insert_inference_time': self.post_insert_inference_time,
+            'train_percent': self.train_percent,
+            'inference_samples': self.inference_samples,
+        }
+        return results
+
+    def save_results(self):
+        filename = '{model[type]}_{test_distribution}_{sample_size}'.format(**self.results)
+        filename = os.path.join(RESULTS_DIR, filename)
+        ds.save_json(filename, self.results, False)
 
     def run_tests(self, num_tests=1):
         for i in range(num_tests):
@@ -127,6 +153,7 @@ def main(argv):
                                           inference_samples=args.inference_samples,)
 
     testing_framework.run_tests(args.number_of_tests)
+    testing_framework.save_results()
 
     print('Split Idx {}'.format(testing_framework.split_idx))
     print('Training {}'.format(testing_framework.train_time))

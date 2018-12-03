@@ -124,6 +124,13 @@ class Hybrid:
                                       "bias": self.index[1][ind].bias}
         return [{"stage": 1, "parameters": result_stage1}, {"stage": 2, "parameters": result_stage2}]
 
+    @property
+    def results(self):
+        return {
+            'type': 'hybrid',
+            'search_method': self.search_method,
+        }
+
     @staticmethod
     def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x, train_data_y, test_data_x, test_data_y,
                         **kwargs):

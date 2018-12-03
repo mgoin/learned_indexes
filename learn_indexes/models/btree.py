@@ -20,4 +20,7 @@ class BTree(IIBTree):
     def get(self, key, guess):
         return guess
 
+    @property
+    def results(self):
+        return {'type': 'btree'}
 

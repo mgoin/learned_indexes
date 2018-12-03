@@ -169,3 +169,16 @@ class Learned_Model:
 
     def get_min_error(self):
         return self.min_error
+
+    @property
+    def results(self):
+        return {
+            'type': 'learned_model_{}'.format(self.network_type),
+            'network_type': self.network_type,
+            'hidden_activation': self.hidden_activation,
+            'hidden_layers': self.hidden_layers,
+            'training_method': self.training_method,
+            'search_method': self.search_method,
+            'batch_size': self.batch_size,
+            'epochs': self.epochs,
+        }
