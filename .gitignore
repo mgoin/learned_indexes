@@ -2,6 +2,7 @@
 __pycache__/
 .idea/
 data/
+results/
 gen_lognormal/gen_lognormal
 *.o
 temp_*
