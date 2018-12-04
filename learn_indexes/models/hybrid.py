@@ -4,7 +4,7 @@ import numpy as np
 
 import models.utils as utils
 from .btree import BTree
-from .Trained_NN import TrainedNN, AbstractNN
+from .learned_model import Learned_Model
 
 
 class Hybrid:
@@ -13,6 +13,7 @@ class Hybrid:
         self._keys = np.empty(0, dtype=int)
         self._values = np.empty(0, dtype=int)
         self.search_method = search_method
+        self.train_results = None
 
     def clear(self):
         self.index = None
@@ -22,15 +23,10 @@ class Hybrid:
     def insert(self, key, value):
         self._keys = np.append(self._keys, key)
         self._values = np.append(self._values, value)
-        self.index = Hybrid._hybrid_training(
+        self.index, self.train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
-            core_nums=[[1, 1], [1, 1]],
-            train_step_nums=[20000, 20000],
-            batch_size_nums=[50, 50],
-            learning_rate_nums=[0.0001, 0.0001],
-            keep_ratio_nums=[1.0, 1.0],
             train_data_x=self._keys,
             train_data_y=self._values,
             test_data_x=[],
@@ -42,15 +38,10 @@ class Hybrid:
         self._keys = np.append(self._keys, k)
         self._values = np.append(self._values, v)
 
-        self.index = Hybrid._hybrid_training(
+        self.index, self.train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
-            core_nums=[[1, 1], [1, 1]],
-            train_step_nums=[20000, 20000],
-            batch_size_nums=[50, 50],
-            learning_rate_nums=[0.0001, 0.0001],
-            keep_ratio_nums=[1.0, 1.0],
             train_data_x=self._keys,
             train_data_y=self._values,
             test_data_x=[],
@@ -90,7 +81,7 @@ class Hybrid:
             p = 0
             for s in range(len(stage_nums) - 1):
                 # Pick the model in the next stage
-                p = self.index[s][p].predict(key)
+                p = self.index[s][p].predict(key)[0]
 
                 # Clamp the stage to the valid range
                 p = utils.clamp(int(round(p)), 0, stage_nums[s + 1] - 1)
@@ -100,35 +91,12 @@ class Hybrid:
 
         return predictions
 
-    def parameters(self):
-        # write parameters into list
-        result_stage1 = {0: {"weights": self.index[0][0].weights, "bias": self.index[0][0].bias}}
-        result_stage2 = {}
-        for ind in range(len(self.index[1])):
-            if self.index[1][ind] is None:
-                continue
-            if isinstance(self.index[1][ind], BTree):
-                tmp_result = []
-                for _, node in self.index[1][ind].nodes.items():
-                    item = {}
-                    for ni in node.items:
-                        if ni is None:
-                            continue
-                        item = {"key": ni.k, "value": ni.v}
-                    tmp = {"index": node.index, "isLeaf": node.isLeaf, "children": node.children, "items": item,
-                           "numberOfkeys": node.numberOfKeys}
-                    tmp_result.append(tmp)
-                result_stage2[ind] = tmp_result
-            else:
-                result_stage2[ind] = {"weights": self.index[1][ind].weights,
-                                      "bias": self.index[1][ind].bias}
-        return [{"stage": 1, "parameters": result_stage1}, {"stage": 2, "parameters": result_stage2}]
-
     @property
     def results(self):
         return {
             'type': 'hybrid',
             'search_method': self.search_method,
+            'train_results': self.train_results,
         }
 
     @staticmethod
@@ -189,32 +157,9 @@ class Hybrid:
                     labels = tmp_labels[i][j]
                     test_labels = test_data_y
 
-                # train model
-                tmp_index = TrainedNN(
-                    threshold=threshold[i],
-                    useThreshold=use_threshold[i],
-                    cores=kwargs['core_nums'][i],
-                    train_step_num=kwargs['train_step_nums'][i],
-                    batch_size=kwargs['batch_size_nums'][i],
-                    learning_rate=kwargs['learning_rate_nums'][i],
-                    keep_ratio=kwargs['keep_ratio_nums'][i],
-                    train_x=inputs,
-                    train_y=labels,
-                    test_x=test_inputs,
-                    test_y=test_labels,
-                )
-                tmp_index.train()
-
-                # get parameters in model (weight matrix and bias matrix)
                 # index[i][j] = new NN trained on tmp_records[i][j];
-                index[i][j] = AbstractNN(
-                    weights=tmp_index.get_weights(),
-                    bias=tmp_index.get_bias(),
-                    core_nums=kwargs['core_nums'][i],
-                    mean_err=tmp_index.cal_err()
-                )
-                del tmp_index
-                gc.collect()
+                index[i][j] = Learned_Model(**kwargs)
+                index[i][j].update(zip(inputs, labels))
 
                 # If the stage is not the last stage
                 # if i < M then
@@ -225,7 +170,7 @@ class Hybrid:
                         # Pick model in next stage with output of this model.
                         # The next stage model does not have to match the training label.
                         # p = index[i][j](r.key) / stages[i + 1];
-                        p = index[i][j].predict(tmp_inputs[i][j][ind])
+                        p = index[i][j].predict(tmp_inputs[i][j][ind])[0]
 
                         # Clamp the stage to the valid range
                         p = utils.clamp(int(round(p)), 0, stage_nums[i + 1] - 1)
@@ -244,22 +189,31 @@ class Hybrid:
                 continue
 
             # index[M][j].calc err(tmp_records[M][j]);
-            mean_abs_err = index[stage_length - 1][i].mean_err
+            mean_abs_err = index[stage_length - 1][i].mean_error
 
             # if index[M][j].max_abs_err > threshold then
             if mean_abs_err > threshold[stage_length - 1]:
                 # replace model with BTree if mean error > threshold
                 print("Using BTree")
                 # index[M][j] = new B-Tree trained on tmp_records[M][j];
-                index[stage_length - 1][i] = BTree(2)
-                index[stage_length - 1][i].build(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i])
+                index[stage_length - 1][i] = BTree()
+                index[stage_length - 1][i].update(zip(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i]))
 
-        # Print model distributions
+        # Store model distributions
+        stage_distribution = []
         for s in range(stage_length):
+            stage = []
             print('stage {}: '.format(s), end='')
+
             for node in range(stage_nums[s]):
+                stage.append(len(tmp_inputs[s][node]))
                 print(' {}'.format(len(tmp_inputs[s][node])), end='')
+            stage_distribution.append(stage)
             print()
 
+        results = {
+            'stage_distribution': stage_distribution
+        }
+
         # return index;
-        return index
+        return index, results

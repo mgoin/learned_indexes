@@ -27,8 +27,8 @@ class Learned_Model:
     def clear(self):
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
-        self.min_error = 0.0
-        self.max_error = 0.0
+        self._min_error = 0.0
+        self._max_error = 0.0
 
         if self.network_type == 'fc':
             self.build_FC()
@@ -113,8 +113,8 @@ class Learned_Model:
         # for i, p in enumerate(predicted_positions):
         #     y_predicted[i] = self.get(self.keys[i], p)
         # errors = np.abs(y_predicted-y_train)
-        # self.max_error = np.max(errors)
-        # self.min_error = np.min(errors)
+        # self._max_error = np.max(errors)
+        # self._min_error = np.min(errors)
 
         return model
 
@@ -164,11 +164,17 @@ class Learned_Model:
         self.model.compile(optimizer='adam', loss='mean_squared_error')
         self.model.save_weights('temp_learned_init.h5')
 
-    def get_max_error(self):
-        return self.max_error
+    @property
+    def max_error(self):
+        return self._max_error
 
-    def get_min_error(self):
-        return self.min_error
+    @property
+    def min_error(self):
+        return self._min_error
+
+    @property
+    def mean_error(self):
+        return 0.0
 
     @property
     def results(self):

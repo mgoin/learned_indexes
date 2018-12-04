@@ -16,7 +16,7 @@ from BTrees.IIBTree import IIBTree
 
 import utils.datastore as ds
 from create_data import Distribution, load_data
-from models import Learned_Model, BTree, Hybrid
+from models import Learned_Model, BTree, Hybrid, Hybrid_Original
 
 RESULTS_DIR = '../results'
 
@@ -68,7 +68,9 @@ class Testing_Framework():
     def save_results(self):
         filename = '{model[type]}_{test_distribution}_{sample_size}'.format(**self.results)
         filename = os.path.join(RESULTS_DIR, filename)
-        ds.save_json(filename, self.results, False)
+        actual_filename = ds.save_json(filename, self.results, False)
+
+        print("Results saved to {}.".format(actual_filename))
 
     def run_tests(self, num_tests=1):
         for i in range(num_tests):
@@ -144,6 +146,9 @@ def main(argv):
     elif args.model in ('hybrid'):
         print("Testing with Hybrid model")
         model = Hybrid()
+    elif args.model in ('hybrid_original'):
+        print("Testing with the original Hybrid model")
+        model = Hybrid_Original()
     else:
         print('Model {} is not recognized.'.format(args.model), file=sys.stderr)
         exit()

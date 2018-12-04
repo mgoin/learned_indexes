@@ -91,6 +91,8 @@ def save_pickle(filename, data, override=True):
     with open(filename, "wb") as f:
         pickle.dump(data, f)
 
+    return filename
+
 
 def read_or_new_json(filename, value, *args, **kwargs):
     """Read or create a new json file and return the data."""
@@ -128,6 +130,8 @@ def save_json(filename, data, override=True):
 
     with open(filename, "w") as f:
         json.dump(data, f, indent=4, separators=(',', ': '), sort_keys=True)
+
+    return filename
 
 
 def add_unique_postfix(filename):
