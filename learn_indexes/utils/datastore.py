@@ -104,7 +104,7 @@ def read_or_new_json(filename, value, *args, **kwargs):
         if os.path.getsize(filename) > 0:
             with open(filename, "r") as f:
                 try:
-                    data = json.load(f)
+                    data = json.load(f, preserve_order=False)
                 except Exception as e:
                     print(e)
                     raise e
@@ -146,3 +146,26 @@ def add_unique_postfix(filename):
             return unique_filename
 
     return None
+
+
+def read_all_data_from_folder(path):
+    """Read all the data from a results directory recursively and return a list of all the data."""
+    data = []
+
+    # Loop through all files recursively
+    for foldername, subfolders, filenames in os.walk(path):
+
+        # Loop though each file
+        for filename in filenames:
+            name, ext = os.path.splitext(filename)
+            print('{} {} {} {}'.format(foldername, filename, name, ext))
+
+            filepath = os.path.join(foldername, filename)
+            if ext == '.json':
+                with open(filepath, "r") as f:
+                    data.append(json.load(f, preserve_order=False))
+            elif ext == '.pkl':
+                with open(filepath, "rb") as f:
+                    data.append(pickle.load(f))
+
+    return data
