@@ -20,6 +20,7 @@ from models import Learned_Model, BTree, Hybrid, Hybrid_Original
 
 RESULTS_DIR = '../results'
 
+
 class Testing_Framework():
     def __init__(self, model, distribution, sample_size, train_percent, inference_samples):
         self.model = model
@@ -96,7 +97,6 @@ class Testing_Framework():
         else:
             keys = np.random.choice(self.data, self.inference_samples)
 
-        found = []
         tic = time.time()
         guesses = self.model.predict(keys)
         toc = time.time()
@@ -118,6 +118,7 @@ class Testing_Framework():
         self.model.update(self.insert_data)
         toc = time.time()
         self.insert_time.append(toc-tic)
+
 
 def main(argv):
     # Parse the arguments
@@ -167,6 +168,7 @@ def main(argv):
     print('Pre-Insert Inference {}'.format(testing_framework.pre_insert_inference_time))
     print('Insert {}'.format(testing_framework.insert_time))
     print('Post-Insert Inference {}'.format(testing_framework.post_insert_inference_time))
+
 
 if __name__ == '__main__':
     main(sys.argv)

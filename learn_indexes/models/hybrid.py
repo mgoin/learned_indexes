@@ -8,12 +8,13 @@ from .learned_model import Learned_Model
 
 
 class Hybrid:
-    def __init__(self, index=None, search_method='linear'):
+    def __init__(self, index=None, search_method='linear', **kwargs):
         self.index = index
         self._keys = np.empty(0, dtype=int)
         self._values = np.empty(0, dtype=int)
         self.search_method = search_method
         self.train_results = None
+        self.model_parameters = kwargs
 
     def clear(self):
         self.index = None
@@ -31,6 +32,7 @@ class Hybrid:
             train_data_y=self._values,
             test_data_x=[],
             test_data_y=[],
+            **self.model_parameters,
         )
 
     def update(self, collection):
@@ -46,6 +48,7 @@ class Hybrid:
             train_data_y=self._values,
             test_data_x=[],
             test_data_y=[],
+            **self.model_parameters,
         )
 
     # Return the value or the default if the key is not found.
@@ -93,11 +96,24 @@ class Hybrid:
 
     @property
     def results(self):
-        return {
+        results = {
             'type': 'hybrid',
             'search_method': self.search_method,
             'train_results': self.train_results,
         }
+
+        models = [[] for _ in self.index]
+
+        for i, stage in enumerate(self.index):
+            for model in stage:
+                if model is None:
+                    models[i].append(None)
+                else:
+                    models[i].append(model.results)
+
+        results['models'] = models
+
+        return results
 
     @staticmethod
     def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x, train_data_y, test_data_x, test_data_y,
