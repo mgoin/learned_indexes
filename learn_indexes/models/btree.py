@@ -3,6 +3,7 @@ from BTrees.IIBTree import IIBTree
 import models.utils as utils
 import numpy as np
 
+
 class BTree(IIBTree):
     def __init__(self):
         IIBTree.__init__(self)

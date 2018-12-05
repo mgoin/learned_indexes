@@ -82,7 +82,8 @@ class Learned_Model:
 
     # Returns get(key)
     def __getitem__(self, key):
-        return self.get(key)
+        p = self.predict(key)
+        return self.get(key, p)
 
     # Returns insert(key, value)
     def __setitem__(self, key, value):
