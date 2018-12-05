@@ -6,3 +6,4 @@ results/
 gen_lognormal/gen_lognormal
 *.o
 temp_*
+.vscode

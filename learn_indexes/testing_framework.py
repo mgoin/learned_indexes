@@ -16,7 +16,7 @@ from BTrees.IIBTree import IIBTree
 
 import utils.datastore as ds
 from create_data import Distribution, load_data
-from models import Learned_Model, BTree, Hybrid, Hybrid_Original
+from models import Learned_FC, Learned_Res, BTree, Hybrid, Hybrid_Original
 
 RESULTS_DIR = '../results'
 
@@ -158,10 +158,10 @@ def main(argv):
         model = BTree()
     elif args.model in ('learned_fc'):
         print("Testing with Learned FC model")
-        model = Learned_Model(network_type='fc')
+        model = Learned_FC()
     elif args.model in ('learned_res'):
         print("Testing with Learned Res model")
-        model = Learned_Model(network_type='res')
+        model = Learned_Res()
     elif args.model in ('hybrid'):
         print("Testing with Hybrid model")
         model = Hybrid()

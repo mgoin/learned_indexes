@@ -4,7 +4,7 @@
 import sys
 from testing_framework import Testing_Framework
 from create_data import Distribution
-from models import Learned_Model, BTree, Hybrid, Hybrid_Original
+from models import Learned_FC, Learned_Res, BTree, Hybrid, Hybrid_Original
 from multiprocessing import Pool
 
 
@@ -33,40 +33,47 @@ def main(argv):
     ]
 
     models = [
-        ('learned_model', Learned_Model),
+        ('learned_fc', Learned_FC),
+        ('learned_res', Learned_Res),
         ('btree', BTree),
         ('hybrid', Hybrid),
         ('hybrid_orig', Hybrid_Original),
     ]
 
     model_constant_params = {
-        'learned_model': {
-            'hidden_activation': 'relu',
-            'training_method': 'full',
-            'search_method': 'linear',
-            'batch_size': 100000,
-            'epochs': 4,
-        },
+        'learned_fc': {},
+        'learned_res': {},
         'btree': {},
         'hybrid': {},
         'hybrid_orig': {},
     }
 
     model_grid_params = {
-        'learned_model': [],
+        'learned_fc': [],
+        'learned_res': [],
         'btree': [{}],
         'hybrid': [{}],
         'hybrid_orig': [{}],
     }
 
     # Create tests for learned model
-    for network_type in ['fc', 'res']:
-        for hidden_layers in [[20,]*2, [500,]*4,]:
-            parms = {
-                'network_type': network_type,
-                'hidden_layers': hidden_layers,
-            }
-            model_grid_params['learned_model'].append(parms)
+    for hidden_layers in [[20,]*2, [500,]*4,]:
+        structure = []
+        for num_neurons in hidden_layers:
+            structure.append({
+                'activation': 'relu',
+                'hidden': num_neurons,
+            })
+        model_grid_params['learned_fc'].append({'network_structure': structure,})
+
+    for hidden_layers in [[20,]*2, [500,]*4,]:
+        structure = []
+        for num_neurons in hidden_layers:
+            structure.append({
+                'activation': 'relu',
+                'hidden': num_neurons,
+            })
+        model_grid_params['learned_res'].append({'network_structure': structure,})
 
     grid_search = []
     # Construct grid search

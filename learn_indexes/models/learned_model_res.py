@@ -2,46 +2,50 @@ from keras.layers import Input, Dense, add
 from keras.models import Model
 import numpy as np
 import time
+import os
+import tempfile
 import models.utils as utils
 
-
-class Learned_Model:
+class Learned_Res:
     def __init__(self,
-                 network_type='fc',
-                 hidden_activation='relu',
-                 hidden_layers=[500, 500, 500, 500, 500],
-                 training_method='full', search_method='linear',
-                 batch_size=100000, epochs=5):
-        self.network_type = network_type
-        self.hidden_activation = hidden_activation
-        self.hidden_layers = hidden_layers
+                 network_structure=[{'activation': 'relu', 'hidden': 500},
+                                    {'activation': 'relu', 'hidden': 500},
+                                    {'activation': 'relu', 'hidden': 500},
+                                    {'activation': 'relu', 'hidden': 500},
+                                    {'activation': 'relu', 'hidden': 500},],
+                 optimizer='adam', loss='mean_squared_error',
+                 training_method='start_from_scratch', search_method='linear',
+                 batch_size=100000, epochs=5, **kwargs):
+        self.network_structure = network_structure
+        self.optimizer = optimizer
+        self.loss = loss
         self.training_method = training_method
         self.search_method = search_method
         self.batch_size = batch_size
         self.epochs = epochs
+        self.model_parameters = kwargs
+
+        self.initial_weights = tempfile.NamedTemporaryFile(delete=False)
+        self.initial_weights.close()
 
         # Set up key/value arrays and build model
         self.clear()
+
+    def __del__(self):
+        os.remove(self.initial_weights.name)
 
     # Remove all items and reset model
     def clear(self):
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
-        self._min_error = 0.0
-        self._max_error = 0.0
-
-        if self.network_type == 'fc':
-            self.build_FC()
-        elif self.network_type == 'res':
-            self.build_Res()
-        else:
-            raise Exception('Network type "{}" not valid!'.format(self.network_type))
+        self.build_network()
+         
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
 
     # Add an item. Return 1 if the item was added, or 0 otherwise.
     def insert(self, key, value):
-        # Only accept key if is is greater than all others (append)
-        # if np.any(self.keys >= key):
-        #     return 0
         self.keys = np.append(self.keys, key)
         self.values = np.append(self.values, value)
         return 1
@@ -70,7 +74,7 @@ class Learned_Model:
         if self.search_method == 'linear':
             pos = utils.linear_search(self.keys, key, guess)
         elif self.search_method == 'binary':
-            pos = utils.binary_search(self.keys, key, guess, self.get_max_error())
+            pos = utils.binary_search(self.keys, key, guess, self.max_error)
         else:
             raise Exception('Search method "{}" is not valid!'.format(self.search_method))
 
@@ -94,9 +98,12 @@ class Learned_Model:
         return self.remove(key)
 
     def train(self, model):
-        if self.training_method == 'full':
-            # load weights from initial build to clear network
-            model.load_weights('temp_learned_init.h5')
+        if self.training_method == 'start_from_scratch':
+            model.load_weights(self.initial_weights.name)
+        elif self.training_method == 'start_from_previous':
+            pass
+        else:
+            raise Exception('"{}" is not a valid training method.'.format(self.training_method))
 
         x_train = self.keys / float(np.max(self.keys))
         y_train = self.values / float(np.max(self.values))
@@ -105,17 +112,6 @@ class Learned_Model:
         model.fit(x_train, y_train,
                   epochs=self.epochs, batch_size=self.batch_size,
                   shuffle=True, verbose=1)
-        # save weights of trained network
-        model.save_weights('trained_learned.h5')
-
-        # # calculate min and max error over the training set
-        # predicted_positions = self.predict(self.keys)
-        # y_predicted = np.empty(self.keys.size)
-        # for i, p in enumerate(predicted_positions):
-        #     y_predicted[i] = self.get(self.keys[i], p)
-        # errors = np.abs(y_predicted-y_train)
-        # self._max_error = np.max(errors)
-        # self._min_error = np.min(errors)
 
         return model
 
@@ -133,59 +129,89 @@ class Learned_Model:
         pos = (normalized_pos * float(np.max(self.values))).astype(int)
         return pos.flatten()
 
-    def build_FC(self):
+    def build_network(self):
         input_layer = Input(shape=(1,))
 
         x = input_layer
-        for num_neurons in self.hidden_layers:
-            x = Dense(num_neurons, activation=self.hidden_activation)(x)
-
-        output_layer = Dense(1, activation='relu')(x)
-
-        self.model = Model(input_layer, output_layer)
-        # Compile model and save initial weights for retraining
-        self.model.compile(optimizer='adam', loss='mean_squared_error')
-        self.model.save_weights('temp_learned_init.h5')
-
-    def build_Res(self):
-        input_layer = Input(shape=(1,))
-
+        for layer in self.network_structure:
+            x = Dense(layer['hidden'], activation=layer['activation'])(x)
+        
         x = input_layer
-        for i, num_neurons in enumerate(self.hidden_layers):
+        for i, layer in enumerate(self.network_structure):
             if i%2 == 1:
                 if i > 1:
                     x = add([shortcut, x])
                 shortcut = x
-            x = Dense(num_neurons, activation=self.hidden_activation)(x)
+            x = Dense(layer['hidden'], activation=layer['activation'])(x)
 
         output_layer = Dense(1, activation='relu')(x)
 
         self.model = Model(input_layer, output_layer)
         # Compile model and save initial weights for retraining
-        self.model.compile(optimizer='adam', loss='mean_squared_error')
-        self.model.save_weights('temp_learned_init.h5')
+        self.model.compile(optimizer=self.optimizer, loss=self.loss)
+        self.model.save_weights(self.initial_weights.name)
 
     @property
     def max_error(self):
+        if self._max_error < 0:
+            self.calculate_error()
         return self._max_error
 
     @property
     def min_error(self):
+        if self._min_error < 0:
+            self.calculate_error()
         return self._min_error
 
     @property
     def mean_error(self):
-        return 0.0
+        if self._mean_error < 0:
+            self.calculate_error()
+        return self._mean_error
+
+    def calculate_error(self):
+        predicted_positions = self.predict(self.keys)
+        
+        y_train = self.values / float(np.max(self.values))
+        y_predicted = np.empty(self.values.size)
+        for i, p in enumerate(predicted_positions):
+            y_predicted[i] = self.get(self.keys[i], p)
+        errors = np.abs(y_predicted-y_train)
+        self._max_error = np.max(errors)
+        self._min_error = np.min(errors)
+        self._mean_error = np.mean(errors)
 
     @property
     def results(self):
         return {
-            'type': 'learned_model_{}'.format(self.network_type),
-            'network_type': self.network_type,
-            'hidden_activation': self.hidden_activation,
-            'hidden_layers': self.hidden_layers,
+            'type': 'learned_model_res',
+            'network_structure': self.network_structure,
             'training_method': self.training_method,
             'search_method': self.search_method,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
         }
+
+    def save(self, filename='trained_learned_model_res.h5'):
+        self.model.save_weights(filename)
+
+    def load(self, filename='trained_learned_model_res.h5'):
+        self.model.load_weights(filename)
+
+    # def build_Res(self):
+    #     input_layer = Input(shape=(1,))
+
+    #     x = input_layer
+    #     for i, num_neurons in enumerate(self.hidden_layers):
+    #         if i%2 == 1:
+    #             if i > 1:
+    #                 x = add([shortcut, x])
+    #             shortcut = x
+    #         x = Dense(num_neurons, activation=self.hidden_activation)(x)
+
+    #     output_layer = Dense(1, activation='relu')(x)
+
+    #     self.model = Model(input_layer, output_layer)
+    #     # Compile model and save initial weights for retraining
+    #     self.model.compile(optimizer='adam', loss='mean_squared_error')
+    #     self.model.save_weights('temp_learned_init.h5')

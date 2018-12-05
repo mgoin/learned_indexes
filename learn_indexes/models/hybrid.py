@@ -4,7 +4,7 @@ import numpy as np
 
 import models.utils as utils
 from .btree import BTree
-from .learned_model import Learned_Model
+from .learned_model_fc import Learned_FC
 
 
 class Hybrid:
@@ -186,7 +186,7 @@ class Hybrid:
                     test_labels = test_data_y
 
                 # index[i][j] = new NN trained on tmp_records[i][j];
-                index[i][j] = Learned_Model(**kwargs)
+                index[i][j] = Learned_FC(**kwargs)
                 index[i][j].update(zip(inputs, labels))
 
                 # If the stage is not the last stage
@@ -225,7 +225,7 @@ class Hybrid:
                 print("Using BTree")
                 # index[M][j] = new B-Tree trained on tmp_records[M][j];
                 index[stage_length - 1][i] = BTree()
-                index[stage_length - 1][i].update(zip(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i]))
+                index[stage_length - 1][i].update(list(zip(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i])))
 
         # Store model distributions
         stage_distribution = []
