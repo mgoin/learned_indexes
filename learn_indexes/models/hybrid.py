@@ -115,6 +115,18 @@ class Hybrid:
 
         return results
 
+    @property
+    def max_error(self):
+        return 0.0
+
+    @property
+    def min_error(self):
+        return 0.0
+
+    @property
+    def mean_error(self):
+        return 0.0
+
     @staticmethod
     def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x, train_data_y, test_data_x, test_data_y,
                         **kwargs):

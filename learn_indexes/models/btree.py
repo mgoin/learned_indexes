@@ -25,6 +25,17 @@ class BTree(IIBTree):
     def results(self):
         return {'type': 'btree'}
 
+    @property
+    def max_error(self):
+        return 0.0
+
+    @property
+    def min_error(self):
+        return 0.0
+
+    @property
+    def mean_error(self):
+        return 0.0
 
 
 if __name__ == '__main__':

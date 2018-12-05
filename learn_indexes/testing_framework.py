@@ -32,6 +32,12 @@ class Testing_Framework():
         self.post_insert_inference_time = []
         self.train_percent = train_percent
         self.inference_samples = inference_samples
+        self.pre_insert_min_error = []
+        self.pre_insert_max_error = []
+        self.pre_insert_mean_error = []
+        self.post_insert_min_error = []
+        self.post_insert_max_error = []
+        self.post_insert_mean_error = []
 
         self.load_test_data()
 
@@ -63,6 +69,12 @@ class Testing_Framework():
             'train_percent': self.train_percent,
             'inference_samples': self.inference_samples,
             'collection_time': datetime.datetime.now(),
+            'pre_insert_min_error': self.pre_insert_min_error,
+            'pre_insert_max_error': self.pre_insert_max_error,
+            'pre_insert_mean_error': self.pre_insert_mean_error,
+            'post_insert_min_error': self.post_insert_min_error,
+            'post_insert_max_error': self.post_insert_max_error,
+            'post_insert_mean_error': self.post_insert_mean_error,
         }
         return results
 
@@ -77,10 +89,16 @@ class Testing_Framework():
         for i in range(num_tests):
             self.time_train()
             self.time_inference(train_only=True)
+            self.pre_insert_mean_error.append(self.model.mean_error)
+            self.pre_insert_max_error.append(self.model.max_error)
+            self.pre_insert_min_error.append(self.model.min_error)
 
             if self.train_percent != 1.0:
                 self.time_insert()
                 self.time_inference()
+                self.post_insert_mean_error.append(self.model.mean_error)
+                self.post_insert_max_error.append(self.model.max_error)
+                self.post_insert_min_error.append(self.model.min_error)
 
     def time_train(self):
         self.model.clear()
