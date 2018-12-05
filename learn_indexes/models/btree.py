@@ -15,7 +15,7 @@ class BTree(IIBTree):
 
         guess = np.zeros(len(key))
         for i, k in enumerate(key):
-            guess[i] = super().get(self, k)
+            guess[i] = super().get(int(k))
         return guess
 
     def get(self, key, guess):
@@ -25,3 +25,11 @@ class BTree(IIBTree):
     def results(self):
         return {'type': 'btree'}
 
+
+
+if __name__ == '__main__':
+    b = BTree()
+    u = [(1, 2), (3, 40)]
+    b.update(u)
+    print(b.predict(1))
+    print(b.predict(3))
