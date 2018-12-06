@@ -109,9 +109,10 @@ class Learned_Res:
         y_train = self.values / float(np.max(self.values))
 
         # train the network
-        model.fit(x_train, y_train,
-                  epochs=self.epochs, batch_size=self.batch_size,
-                  shuffle=True, verbose=1)
+        train_history = model.fit(x_train, y_train,
+                        epochs=self.epochs, batch_size=self.batch_size,
+                        shuffle=True, verbose=2)
+        self.train_results = train_history.history
 
         return model
 
@@ -170,13 +171,11 @@ class Learned_Res:
         return self._mean_error
 
     def calculate_error(self):
-        predicted_positions = self.predict(self.keys)
-        
-        y_train = self.values / float(np.max(self.values))
-        y_predicted = np.empty(self.values.size)
-        for i, p in enumerate(predicted_positions):
-            y_predicted[i] = self.get(self.keys[i], p)
-        errors = np.abs(y_predicted-y_train)
+        # Get predicted positions from model
+        normalized_values = self.predict(self.keys)
+        predicted_values = (normalized_values * float(np.max(self.values))).astype(int)
+        # Calculate error between predictions and ground truth
+        errors = np.abs(predicted_values-self.values)
         self._max_error = np.max(errors)
         self._min_error = np.min(errors)
         self._mean_error = np.mean(errors)
@@ -184,12 +183,15 @@ class Learned_Res:
     @property
     def results(self):
         return {
-            'type': 'learned_model_res',
+            'type': 'learned_model_fc',
             'network_structure': self.network_structure,
+            'optimizer': self.optimizer,
+            'loss': self.loss,
             'training_method': self.training_method,
             'search_method': self.search_method,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
+            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_res.h5'):
@@ -197,21 +199,3 @@ class Learned_Res:
 
     def load(self, filename='trained_learned_model_res.h5'):
         self.model.load_weights(filename)
-
-    # def build_Res(self):
-    #     input_layer = Input(shape=(1,))
-
-    #     x = input_layer
-    #     for i, num_neurons in enumerate(self.hidden_layers):
-    #         if i%2 == 1:
-    #             if i > 1:
-    #                 x = add([shortcut, x])
-    #             shortcut = x
-    #         x = Dense(num_neurons, activation=self.hidden_activation)(x)
-
-    #     output_layer = Dense(1, activation='relu')(x)
-
-    #     self.model = Model(input_layer, output_layer)
-    #     # Compile model and save initial weights for retraining
-    #     self.model.compile(optimizer='adam', loss='mean_squared_error')
-    #     self.model.save_weights('temp_learned_init.h5')

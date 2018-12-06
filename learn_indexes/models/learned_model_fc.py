@@ -109,9 +109,10 @@ class Learned_FC:
         y_train = self.values / float(np.max(self.values))
 
         # train the network
-        model.fit(x_train, y_train,
-                  epochs=self.epochs, batch_size=self.batch_size,
-                  shuffle=True, verbose=1)
+        train_history = model.fit(x_train, y_train,
+                        epochs=self.epochs, batch_size=self.batch_size,
+                        shuffle=True, verbose=2)
+        self.train_results = train_history.history
 
         return model
 
@@ -162,12 +163,11 @@ class Learned_FC:
         return self._mean_error
 
     def calculate_error(self):
-        predicted_positions = self.predict(self.keys)
-        y_train = self.values / float(np.max(self.values))
-        y_predicted = np.empty(self.values.size)
-        for i, p in enumerate(predicted_positions):
-            y_predicted[i] = self.get(self.keys[i], p)
-        errors = np.abs(y_predicted-y_train)
+        # Get predicted positions from model
+        normalized_values = self.predict(self.keys)
+        predicted_values = (normalized_values * float(np.max(self.values))).astype(int)
+        # Calculate error between predictions and ground truth
+        errors = np.abs(predicted_values-self.values)
         self._max_error = np.max(errors)
         self._min_error = np.min(errors)
         self._mean_error = np.mean(errors)
@@ -177,10 +177,13 @@ class Learned_FC:
         return {
             'type': 'learned_model_fc',
             'network_structure': self.network_structure,
+            'optimizer': self.optimizer,
+            'loss': self.loss,
             'training_method': self.training_method,
             'search_method': self.search_method,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
+            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):

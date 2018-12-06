@@ -7,3 +7,4 @@ gen_lognormal/gen_lognormal
 *.o
 temp_*
 .vscode
+.ipynb_checkpoints
