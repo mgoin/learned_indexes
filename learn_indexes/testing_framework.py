@@ -40,6 +40,7 @@ class Testing_Framework():
         self.post_insert_min_error = []
         self.post_insert_max_error = []
         self.post_insert_mean_error = []
+        self.training_history = []
         self.seed = seed
 
         # Seed before and after since load test data could be using cached results
@@ -83,6 +84,7 @@ class Testing_Framework():
             'post_insert_max_error': self.post_insert_max_error,
             'post_insert_mean_error': self.post_insert_mean_error,
             'seed': self.seed,
+            'training_history': self.training_history,
         }
         return results
 
@@ -95,25 +97,33 @@ class Testing_Framework():
 
     def run_tests(self, num_tests=1):
         for i in range(num_tests):
-            self.time_train()
+            train_hist = []
+
+            hist = self.time_train()
+            train_hist.append(hist)
             self.time_inference(train_only=True)
             self.pre_insert_mean_error.append(self.model.mean_error)
             self.pre_insert_max_error.append(self.model.max_error)
             self.pre_insert_min_error.append(self.model.min_error)
 
             if self.train_percent != 1.0:
-                self.time_insert()
+                hist = self.time_insert()
+                train_hist.append(hist)
                 self.time_inference()
                 self.post_insert_mean_error.append(self.model.mean_error)
                 self.post_insert_max_error.append(self.model.max_error)
                 self.post_insert_min_error.append(self.model.min_error)
 
+            self.training_history.append(train_hist)
+
+
     def time_train(self):
         self.model.clear()
         tic = time.time()
-        self.model.update(self.train_data)
+        history = self.model.update(self.train_data)
         toc = time.time()
         self.train_time.append(toc-tic)
+        return history
 
     def time_inference(self, train_only=False):
 
@@ -141,9 +151,10 @@ class Testing_Framework():
 
     def time_insert(self):
         tic = time.time()
-        self.model.update(self.insert_data)
+        history = self.model.update(self.insert_data)
         toc = time.time()
         self.insert_time.append(toc-tic)
+        return history
 
 
 def main(argv):

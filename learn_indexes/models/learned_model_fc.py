@@ -39,7 +39,7 @@ class Learned_FC:
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
         self.build_network()
-         
+
         self._min_error = -1.0
         self._max_error = -1.0
         self._mean_error = -1.0
@@ -66,7 +66,8 @@ class Learned_FC:
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
         # Retrain model
-        self.model = self.train(self.model)
+        self.model, history = self.train(self.model)
+        return history
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
@@ -112,9 +113,8 @@ class Learned_FC:
         train_history = model.fit(x_train, y_train,
                         epochs=self.epochs, batch_size=self.batch_size,
                         shuffle=True, verbose=2)
-        self.train_results = train_history.history
 
-        return model
+        return model, train_history.history
 
     def predict(self, key, batch_size=1000):
         # Key is just a value, make it an array
@@ -182,7 +182,6 @@ class Learned_FC:
             'search_method': self.search_method,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
-            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):

@@ -13,7 +13,6 @@ class Hybrid:
         self._keys = np.empty(0, dtype=int)
         self._values = np.empty(0, dtype=int)
         self.search_method = search_method
-        self.train_results = None
         self.model_parameters = kwargs
 
     def clear(self):
@@ -24,7 +23,7 @@ class Hybrid:
     def insert(self, key, value):
         self._keys = np.append(self._keys, key)
         self._values = np.append(self._values, value)
-        self.index, self.train_results = Hybrid._hybrid_training(
+        self.index, train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
@@ -34,13 +33,15 @@ class Hybrid:
             test_data_y=[],
             **self.model_parameters,
         )
+
+        return train_results
 
     def update(self, collection):
         k, v = zip(*collection)
         self._keys = np.append(self._keys, k)
         self._values = np.append(self._values, v)
 
-        self.index, self.train_results = Hybrid._hybrid_training(
+        self.index, train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
@@ -50,6 +51,8 @@ class Hybrid:
             test_data_y=[],
             **self.model_parameters,
         )
+
+        return train_results
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
@@ -99,7 +102,6 @@ class Hybrid:
         results = {
             'type': 'hybrid',
             'search_method': self.search_method,
-            'train_results': self.train_results,
         }
 
         models = [[] for _ in self.index]
