@@ -170,7 +170,6 @@ class Learned_FC:
         self._max_error = np.max(errors)
         self._min_error = np.min(errors)
         self._mean_error = np.mean(errors)
-        import pdb; pdb.set_trace()
 
     @property
     def results(self):
