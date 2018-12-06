@@ -41,8 +41,8 @@ def main(argv):
     ]
 
     model_constant_params = {
-        'learned_fc': {'epochs': 50, 'batch_size': 10000},
-        'learned_res': {'epochs': 50, 'batch_size': 10000},
+        'learned_fc': {'epochs': 25, 'batch_size': 10000},
+        'learned_res': {'epochs': 25, 'batch_size': 10000},
         'btree': {},
         # 'hybrid': {},
         # 'hybrid_orig': {},
@@ -58,9 +58,9 @@ def main(argv):
 
     # Create tests for learned model
     for loss in ['mean_squared_error', 'mean_absolute_error']:
-        for optimizer in ['sgd', 'adam', 'adadelta', 'nadam']:
-            for activation in ['relu', 'sigmoid', 'tanh', 'linear']:
-                for hidden_layers in [[10,]*2, [10,]*4, [10,]*8, [100,]*2, [100,]*4, [100,]*8, [1000,]*2, [1000,]*4, [1000,]*8,]:
+        for optimizer in ['sgd', 'adam', 'adadelta']:
+            for activation in ['relu', 'sigmoid', 'linear']:
+                for hidden_layers in [[10,]*2, [10,]*8, [100,]*2, [100,]*8, [1000,]*2, [1000,]*8,]:
                     structure = []
                     for num_neurons in hidden_layers:
                         structure.append({

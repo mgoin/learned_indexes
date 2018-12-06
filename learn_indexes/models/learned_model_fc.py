@@ -164,13 +164,13 @@ class Learned_FC:
 
     def calculate_error(self):
         # Get predicted positions from model
-        normalized_values = self.predict(self.keys)
-        predicted_values = (normalized_values * float(np.max(self.values))).astype(int)
+        predicted_values = self.predict(self.keys)
         # Calculate error between predictions and ground truth
         errors = np.abs(predicted_values-self.values)
         self._max_error = np.max(errors)
         self._min_error = np.min(errors)
         self._mean_error = np.mean(errors)
+        import pdb; pdb.set_trace()
 
     @property
     def results(self):
