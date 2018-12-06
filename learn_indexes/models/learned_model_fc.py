@@ -1,5 +1,6 @@
 from keras.layers import Input, Dense, add
 from keras.models import Model
+from keras import backend as K
 import numpy as np
 import time
 import os
@@ -37,6 +38,7 @@ class Learned_FC:
 
     def __del__(self):
         os.remove(self.initial_weights.name)
+        K.clear_session()
 
     # Remove all items and reset model
     def clear(self):
