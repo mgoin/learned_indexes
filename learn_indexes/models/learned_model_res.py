@@ -5,6 +5,7 @@ import time
 import os
 import tempfile
 import models.utils as utils
+import models.train as trainer
 
 class Learned_Res:
     def __init__(self,
@@ -15,7 +16,8 @@ class Learned_Res:
                                     {'activation': 'relu', 'hidden': 500},],
                  optimizer='adam', loss='mean_squared_error',
                  training_method='start_from_scratch', search_method='linear',
-                 batch_size=100000, epochs=5, **kwargs):
+                 batch_size=100000, epochs=50, lr_decay=False, early_stopping=True,
+                 **kwargs):
         self.network_structure = network_structure
         self.optimizer = optimizer
         self.loss = loss
@@ -23,6 +25,8 @@ class Learned_Res:
         self.search_method = search_method
         self.batch_size = batch_size
         self.epochs = epochs
+        self.lr_decay = lr_decay
+        self.early_stopping = early_stopping
         self.model_parameters = kwargs
 
         self.initial_weights = tempfile.NamedTemporaryFile(delete=False)
@@ -106,13 +110,8 @@ class Learned_Res:
         else:
             raise Exception('"{}" is not a valid training method.'.format(self.training_method))
 
-        x_train = self.keys / float(np.max(self.keys))
-        y_train = self.values / float(np.max(self.values))
-
-        # train the network
-        train_history = model.fit(x_train, y_train,
-                        epochs=self.epochs, batch_size=self.batch_size,
-                        shuffle=True, verbose=2)
+        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values,
+                                                     lr_decay=self.lr_decay, early_stopping=self.early_stopping)
 
         return model, train_history.history
 
@@ -190,6 +189,8 @@ class Learned_Res:
             'search_method': self.search_method,
             'batch_size': self.batch_size,
             'epochs': self.epochs,
+            'lr_decay': self.lr_decay,
+            'early_stopping': self.early_stopping,
         }
 
     def save(self, filename='trained_learned_model_res.h5'):
