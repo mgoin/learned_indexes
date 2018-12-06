@@ -109,7 +109,8 @@ class Learned_FC:
         else:
             raise Exception('"{}" is not a valid training method.'.format(self.training_method))
 
-        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values,
+        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=True,
+                                                     batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
         self.train_results = train_history.history
 
