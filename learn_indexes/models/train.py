@@ -1,28 +1,27 @@
 from keras.models import Model
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import numpy as np
 import time
 import models.utils as utils
 
-class Trainer():
-    def __init__(self):
-        pass
+def train_network(model, keys, values,
+          training_method='start_from_scratch',
+          batch_size=10000, epochs=100,
+          lr_decay=False, early_stopping=True):
 
-    def train(self, model):
-        pass
-        # if self.training_method == 'full':
-        #     # load weights from initial build to clear network
-        #     model.load_weights('temp_learned_init.h5')
-        # elif self.training_method == 'partial':
-        #     pass
-        # else:
-        #     raise Exception('"{}" is not a valid training method.'.format(self.training_method))
+    x_train = keys / float(np.max(keys))
+    y_train = values / float(np.max(values))
 
-        # x_train = self.keys / flowat(np.max(self.keys))
-        # y_train = self.values / float(np.max(self.values))
+    # Set up callback functions
+    callbacks=[]
+    if lr_decay:
+        callbacks.append(ReduceLROnPlateau(monitor='loss', factor=0.95, patience=10, min_lr=0.00001, verbose=2))
+    if early_stopping:
+        callbacks.append(EarlyStopping(monitor='loss', patience=15, verbose=2))
 
-        # # train the network
-        # model.fit(x_train, y_train,
-        #           epochs=self.epochs, batch_size=self.batch_size,
-        #           shuffle=True, verbose=1)
+    # Train the network
+    train_history = model.fit(x_train, y_train,
+                    epochs=epochs, batch_size=batch_size,
+                    shuffle=True, verbose=2, callbacks=callbacks)
 
-        # return model
+    return model, train_history
