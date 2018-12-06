@@ -10,6 +10,7 @@ import csv
 import random
 import seaborn as sns
 import matplotlib.pyplot as plt
+from functools import lru_cache
 
 SIZE = 190000000
 
@@ -90,6 +91,7 @@ def create_data(distribution, data_size=SIZE):
         data.tofile(f)
 
 
+@lru_cache(maxsize=10)
 def load_data(distribution, sample_size=190000000):
     with open(filePath[distribution], 'r') as f:
         data = np.fromfile(f, dtype=np.int32)
