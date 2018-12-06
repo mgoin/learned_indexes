@@ -21,6 +21,10 @@ class BTree(IIBTree):
     def get(self, key, guess):
         return guess
 
+    def update(self, collection):
+        int_list = [(int(i), int(j)) for i, j in collection]
+        super().update(int_list)
+
     @property
     def results(self):
         return {'type': 'btree'}

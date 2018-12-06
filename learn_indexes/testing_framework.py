@@ -54,11 +54,11 @@ class Testing_Framework():
 
     @property
     def train_data(self):
-        return [(int(v), int(i)) for i, v in enumerate(self.data[:self.split_idx])]
+        return [(v, np.int32(i)) for i, v in enumerate(self.data[:self.split_idx])]
 
     @property
     def insert_data(self):
-        return [(int(v), int(i+self.split_idx)) for i, v in enumerate(self.data[self.split_idx:])]
+        return [(v, np.int32(i+self.split_idx)) for i, v in enumerate(self.data[self.split_idx:])]
 
     @property
     def split_idx(self):
