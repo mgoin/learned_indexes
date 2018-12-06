@@ -20,9 +20,9 @@ def main(argv):
     # Constant Parameters
     number_of_tests = 1
     testing_params = {
-        'sample_size': 100,
-        'inference_samples': 100,
-        'train_percent': 0.8,
+        'sample_size': 100000,
+        'inference_samples': 10,
+        'train_percent': 1.0,
     }
 
     distributions = [
@@ -36,44 +36,48 @@ def main(argv):
         ('learned_fc', Learned_FC),
         ('learned_res', Learned_Res),
         ('btree', BTree),
-        ('hybrid', Hybrid),
-        ('hybrid_orig', Hybrid_Original),
+        # ('hybrid', Hybrid),
+        # ('hybrid_orig', Hybrid_Original),
     ]
 
     model_constant_params = {
-        'learned_fc': {},
-        'learned_res': {},
+        'learned_fc': {'epochs': 50, 'batch_size': 10000},
+        'learned_res': {'epochs': 50, 'batch_size': 10000},
         'btree': {},
-        'hybrid': {},
-        'hybrid_orig': {},
+        # 'hybrid': {},
+        # 'hybrid_orig': {},
     }
 
     model_grid_params = {
         'learned_fc': [],
         'learned_res': [],
         'btree': [{}],
-        'hybrid': [{}],
-        'hybrid_orig': [{}],
+        # 'hybrid': [{}],
+        # 'hybrid_orig': [{}],
     }
 
     # Create tests for learned model
-    for hidden_layers in [[20,]*2, [500,]*4,]:
-        structure = []
-        for num_neurons in hidden_layers:
-            structure.append({
-                'activation': 'relu',
-                'hidden': num_neurons,
-            })
-        model_grid_params['learned_fc'].append({'network_structure': structure,})
+    for loss in ['mean_squared_error', 'mean_absolute_error']:
+        for optimizer in ['sgd', 'adam', 'adadelta', 'nadam']:
+            for activation in ['relu', 'sigmoid', 'tanh', 'linear']:
+                for hidden_layers in [[10,]*2, [10,]*4, [10,]*8, [100,]*2, [100,]*4, [100,]*8, [1000,]*2, [1000,]*4, [1000,]*8,]:
+                    structure = []
+                    for num_neurons in hidden_layers:
+                        structure.append({
+                            'activation': activation,
+                            'hidden': num_neurons,
+                        })
 
-    for hidden_layers in [[20,]*2, [500,]*4,]:
-        structure = []
-        for num_neurons in hidden_layers:
-            structure.append({
-                'activation': 'relu',
-                'hidden': num_neurons,
-            })
-        model_grid_params['learned_res'].append({'network_structure': structure,})
+                    model_grid_params['learned_fc'].append({
+                        'network_structure': structure, 
+                        'loss': loss, 
+                        'optimizer': optimizer, 
+                        })
+                    model_grid_params['learned_res'].append({
+                        'network_structure': structure, 
+                        'loss': loss, 
+                        'optimizer': optimizer, 
+                        })
 
     grid_search = []
     # Construct grid search
@@ -90,9 +94,12 @@ def main(argv):
 
     # Perform grid search sequentially
     for i, (model, mp, tp) in enumerate(grid_search):
-        print("Test {} of {}: {}, {}, {}".format(i, len(grid_search), model, sorted(mp.items()), sorted(tp.items())))
-        run_test(model, mp, tp, number_of_tests)
-
+        print("Starting Test {} of {}: {}, {}, {}".format(i, len(grid_search), model, sorted(mp.items()), sorted(tp.items())))
+        try:
+            run_test(model, mp, tp, number_of_tests)
+        except Exception as e:
+            print("****Test failed****:", repr(e))
+        
     # # Perform the grid search using a pool
     # p = Pool(4)
     # p.starmap(run_test, grid_search)
