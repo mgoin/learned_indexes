@@ -43,7 +43,7 @@ class Learned_Res:
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
         self.build_network()
-         
+
         self._min_error = -1.0
         self._max_error = -1.0
         self._mean_error = -1.0
@@ -70,7 +70,8 @@ class Learned_Res:
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
         # Retrain model
-        self.model = self.train(self.model)
+        self.model, history = self.train(self.model)
+        return history
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
@@ -112,9 +113,8 @@ class Learned_Res:
         model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=True,
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
-        self.train_results = train_history.history
 
-        return model
+        return model, train_history.history
 
     def predict(self, key, batch_size=1000):
         # Key is just a value, make it an array
@@ -192,7 +192,6 @@ class Learned_Res:
             'epochs': self.epochs,
             'lr_decay': self.lr_decay,
             'early_stopping': self.early_stopping,
-            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_res.h5'):

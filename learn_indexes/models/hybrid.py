@@ -10,21 +10,20 @@ from .learned_model_fc import Learned_FC
 class Hybrid:
     def __init__(self, index=None, search_method='linear', **kwargs):
         self.index = index
-        self._keys = np.empty(0, dtype=int)
-        self._values = np.empty(0, dtype=int)
+        self._keys = np.empty(0, dtype=np.int32)
+        self._values = np.empty(0, dtype=np.int32)
         self.search_method = search_method
-        self.train_results = None
         self.model_parameters = kwargs
 
     def clear(self):
         self.index = None
-        self._keys = np.empty(0, dtype=int)
-        self._values = np.empty(0, dtype=int)
+        self._keys = np.empty(0, dtype=np.int32)
+        self._values = np.empty(0, dtype=np.int32)
 
     def insert(self, key, value):
         self._keys = np.append(self._keys, key)
         self._values = np.append(self._values, value)
-        self.index, self.train_results = Hybrid._hybrid_training(
+        self.index, train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
@@ -34,13 +33,15 @@ class Hybrid:
             test_data_y=[],
             **self.model_parameters,
         )
+
+        return train_results
 
     def update(self, collection):
         k, v = zip(*collection)
         self._keys = np.append(self._keys, k)
         self._values = np.append(self._values, v)
 
-        self.index, self.train_results = Hybrid._hybrid_training(
+        self.index, train_results = Hybrid._hybrid_training(
             threshold=[1, 4],
             use_threshold=[True, False],
             stage_nums=[1, 10],
@@ -50,6 +51,8 @@ class Hybrid:
             test_data_y=[],
             **self.model_parameters,
         )
+
+        return train_results
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
@@ -99,7 +102,6 @@ class Hybrid:
         results = {
             'type': 'hybrid',
             'search_method': self.search_method,
-            'train_results': self.train_results,
         }
 
         models = [[] for _ in self.index]
@@ -147,6 +149,7 @@ class Hybrid:
 
         # Result: trained index
         index = [[None for _ in range(stage_nums[i])] for i in range(stage_length)]
+        index_training = [[None for _ in range(stage_nums[i])] for i in range(stage_length)]
 
         # tmp_records[][];
         tmp_inputs = [[[] for _ in range(stage_nums[i])] for i in range(stage_length)]
@@ -187,7 +190,7 @@ class Hybrid:
 
                 # index[i][j] = new NN trained on tmp_records[i][j];
                 index[i][j] = Learned_FC(**kwargs)
-                index[i][j].update(zip(inputs, labels))
+                index_training[i][j] = index[i][j].update(zip(inputs, labels))
 
                 # If the stage is not the last stage
                 # if i < M then
@@ -225,7 +228,7 @@ class Hybrid:
                 print("Using BTree")
                 # index[M][j] = new B-Tree trained on tmp_records[M][j];
                 index[stage_length - 1][i] = BTree()
-                index[stage_length - 1][i].update(list(zip(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i])))
+                index_training[stage_length - 1][i] = index[stage_length - 1][i].update(list(zip(tmp_inputs[stage_length - 1][i], tmp_labels[stage_length - 1][i])))
 
         # Store model distributions
         stage_distribution = []
@@ -240,7 +243,8 @@ class Hybrid:
             print()
 
         results = {
-            'stage_distribution': stage_distribution
+            'stage_distribution': stage_distribution,
+            'stage_training': index_training,
         }
 
         # return index;

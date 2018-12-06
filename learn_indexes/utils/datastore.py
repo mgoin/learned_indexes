@@ -116,7 +116,7 @@ def read_or_new_json(filename, value, *args, **kwargs):
         else:
             data = value
         with open(filename, "w") as f:
-            json.dump(data, f, indent=4, separators=(',', ': '))
+            json.dump(data, f, indent=4, separators=(',', ': '), sort_keys=True, allow_nan=True)
     return data
 
 
@@ -129,7 +129,7 @@ def save_json(filename, data, override=True):
         filename = add_unique_postfix(filename)
 
     with open(filename, "w") as f:
-        json.dump(data, f, indent=4, separators=(',', ': '), sort_keys=True)
+        json.dump(data, f, indent=4, separators=(',', ': '), sort_keys=True, allow_nan=True)
 
     return filename
 
