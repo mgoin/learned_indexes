@@ -9,6 +9,8 @@ import sys
 import time
 import datetime
 from enum import Enum
+import numpy as np
+import tensorflow as tf
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +24,7 @@ RESULTS_DIR = '../results'
 
 
 class Testing_Framework():
-    def __init__(self, model, distribution, sample_size, train_percent, inference_samples):
+    def __init__(self, model, distribution, sample_size, train_percent, inference_samples, seed=None):
         self.model = model
         self.test_distribution = distribution
         self.sample_size = sample_size
@@ -38,8 +40,13 @@ class Testing_Framework():
         self.post_insert_min_error = []
         self.post_insert_max_error = []
         self.post_insert_mean_error = []
+        self.seed = seed
 
+        # Seed before and after since load test data could be using cached results
+        np.random.seed(self.seed)
         self.load_test_data()
+        np.random.seed(self.seed)
+        tf.set_random_seed(self.seed)
 
     def load_test_data(self):
         self.data = load_data(self.test_distribution, self.sample_size)
@@ -75,6 +82,7 @@ class Testing_Framework():
             'post_insert_min_error': self.post_insert_min_error,
             'post_insert_max_error': self.post_insert_max_error,
             'post_insert_mean_error': self.post_insert_mean_error,
+            'seed': self.seed,
         }
         return results
 
@@ -147,6 +155,7 @@ def main(argv):
     parser.add_argument('-t', '--train-percent', help='percent of data for initial training (the rest is used for insert)', default=1.0, type=float)
     parser.add_argument('-n', '--number-of-tests', help='number of tests to run', default=1, type=int)
     parser.add_argument('-i', '--inference-samples', help='Number of inferences used for timing', default=100000, type=int)
+    parser.add_argument('--seed', help='Seed for the random number generator', default=None, type=int)
     args = parser.parse_args(argv[1:])
 
     # Check the parameters
@@ -176,7 +185,8 @@ def main(argv):
                                           distribution=Distribution.from_str(args.distribution),
                                           sample_size=int(args.sample_size),
                                           train_percent=args.train_percent,
-                                          inference_samples=args.inference_samples,)
+                                          inference_samples=args.inference_samples,
+                                          seed=args.seed)
 
     testing_framework.run_tests(args.number_of_tests)
     testing_framework.save_results()
