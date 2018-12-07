@@ -95,7 +95,7 @@ def get_panda_from_results(path='../results', run_handling='expand'):
 
     """
 
-    results = ds.read_all_data_from_folder('../results')
+    results = ds.read_all_data_from_folder(path)
     data_tmp = []
     for result in results:
         if run_handling == 'expand':
