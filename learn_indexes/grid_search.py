@@ -8,21 +8,21 @@ from models import Learned_FC, Learned_Res, Learned_Bits, BTree, Hybrid, Hybrid_
 from multiprocessing import Pool
 
 
-def run_test(model, mp, tp, number_of_tests=1):
+def run_test(model, mp, tp):
     m = model(**mp)
     tf = Testing_Framework(model=m, **tp)
-    tf.run_tests(number_of_tests)
+    tf.run_tests()
     tf.save_results()
 
 
 def main(argv):
 
     # Constant Parameters
-    number_of_tests = 1
     testing_params = {
         'sample_size': 100000,
         'inference_samples': 10,
         'train_percent': 1.0,
+        'num_tests': 3,
     }
 
     distributions = [
@@ -104,10 +104,10 @@ def main(argv):
     for i, (model, mp, tp) in enumerate(grid_search):
         print("Starting Test {} of {}: {}, {}, {}".format(i, len(grid_search), model, sorted(mp.items()), sorted(tp.items())))
         try:
-            run_test(model, mp, tp, number_of_tests)
+            run_test(model, mp, tp)
         except Exception as e:
             print("****Test failed****:", repr(e))
-        
+
     # # Perform the grid search using a pool
     # p = Pool(4)
     # p.starmap(run_test, grid_search)
