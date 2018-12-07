@@ -71,8 +71,12 @@ class Learned_FC:
         k, v = zip(*collection)
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
-        # Retrain model
-        self.model, history = self.train(self.model)
+        
+        # Train model
+        if self.training_method == 'train_only_new':
+            self.model, history = self.train(self.model, k, v)
+        else:
+            self.model, history = self.train(self.model, self.keys, self.values)
         return history
 
     # Return the value or the default if the key is not found.
@@ -104,18 +108,14 @@ class Learned_FC:
     def __delitem__(self, key):
         return self.remove(key)
 
-    def train(self, model):
+    def train(self, model, keys, values):
         if self.training_method == 'start_from_scratch':
             model.load_weights(self.initial_weights.name)
-        elif self.training_method == 'start_from_previous':
-            pass
-        else:
-            raise Exception('"{}" is not a valid training method.'.format(self.training_method))
-
-        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=True,
+        
+        model, train_history = trainer.train_network(model=model, keys=keys, values=values, normalize=True,
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
-
+        self.train_results = train_history.history
         return model, train_history.history
 
     def predict(self, key, batch_size=1000):
