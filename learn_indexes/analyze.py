@@ -5,6 +5,8 @@ import pandas as pd
 
 
 def avg_results(data, result):
+    """Average the results for each run to get a single data point."""
+
     result['train_time'] = np.mean(result['train_time'])
     result['insert_time'] = np.mean(result['insert_time'])
 
@@ -35,6 +37,8 @@ def avg_results(data, result):
 
 
 def expand_results(data, result):
+    """Expand results by creating a data entry for run."""
+
     num_tests = len(result['train_time'])
 
     for i in range(num_tests):
@@ -79,12 +83,27 @@ def expand_results(data, result):
     return data
 
 
-def get_panda_from_results():
+def get_panda_from_results(path='../results', run_handling='expand'):
+    """Read the results data and store it in a panda dataframe
+
+    Parameters:
+        path (string) - Path to the results directory.
+        run_handling (string) - method used to handle entires with multiple runs stored.
+
+    Returns:
+        A panda dataframe.
+
+    """
+
     results = ds.read_all_data_from_folder('../results')
     data_tmp = []
     for result in results:
-        # data_tmp = avg_results(data_tmp, result)
-        data_tmp = expand_results(data_tmp, result)
+        if run_handling == 'expand':
+            data_tmp = expand_results(data_tmp, result)
+        elif run_handling == 'avg':
+            data_tmp = avg_results(data_tmp, result)
+        else:
+            raise Exception('Unknown run_handling: {}'.format(run_handling))
 
     data = pd.DataFrame(data_tmp)
     del data_tmp
@@ -92,6 +111,8 @@ def get_panda_from_results():
 
 
 def save_as_csv(path):
+    """Save the results to a csv file."""
+
     data = get_panda_from_results()
     data.to_csv(path)
 
