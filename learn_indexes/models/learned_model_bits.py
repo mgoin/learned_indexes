@@ -1,4 +1,5 @@
-from keras.layers import Input, Dense, add
+import tensorflow as tf
+from keras.layers import Input, Dense, Conv1D, Lambda, add
 from keras.models import Model
 from keras import backend as K
 import numpy as np
@@ -8,7 +9,7 @@ import tempfile
 import models.utils as utils
 import models.train as trainer
 
-class Learned_FC:
+class Learned_Bits:
     def __init__(self,
                  network_structure=[{'activation': 'relu', 'hidden': 500},
                                     {'activation': 'relu', 'hidden': 500},
@@ -17,7 +18,7 @@ class Learned_FC:
                                     {'activation': 'relu', 'hidden': 500},],
                  optimizer='adam', loss='mean_squared_error',
                  training_method='start_from_scratch', search_method='linear',
-                 batch_size=100000, epochs=50, lr_decay=False, early_stopping=True,
+                 batch_size=100000, epochs=1000, lr_decay=False, early_stopping=True,
                  **kwargs):
         self.network_structure = network_structure
         self.optimizer = optimizer
@@ -45,7 +46,7 @@ class Learned_FC:
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
         self.build_network()
-
+         
         self._min_error = -1.0
         self._max_error = -1.0
         self._mean_error = -1.0
@@ -72,8 +73,7 @@ class Learned_FC:
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
         # Retrain model
-        self.model, history = self.train(self.model)
-        return history
+        self.model = self.train(self.model)
 
     # Return the value or the default if the key is not found.
     def get(self, key, guess):
@@ -112,32 +112,35 @@ class Learned_FC:
         else:
             raise Exception('"{}" is not a valid training method.'.format(self.training_method))
 
-        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=True,
+        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=False,
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
+        self.train_results = train_history.history
 
-        return model, train_history.history
+        return model
 
     def predict(self, key, batch_size=1000):
         # Key is just a value, make it an array
         if type(key) != np.ndarray:
             key = np.full(1, key)
 
-        normalized_key = key / float(np.max(self.keys))
-
         # Get estimate position from the model
-        normalized_pos = self.model.predict(normalized_key, batch_size)
-
-        # Convert the normalized position back to index
-        pos = (normalized_pos * float(np.max(self.values))).astype(int)
-        return pos.flatten()
+        predicted_value = self.model.predict(key, batch_size).astype(int)
+        return predicted_value.flatten()
 
     def build_network(self):
-        input_layer = Input(shape=(1,))
+        input_layer = Input(shape=(1,), dtype=tf.int32)
 
-        x = input_layer
+        # Convert 1 integer input into 32 binary neurons (bits)
+        int2bit = Lambda(lambda x: tf.to_float(tf.mod(tf.bitwise.right_shift(tf.expand_dims(x,1), tf.range(32)), 2)), output_shape=(32,))(input_layer)
+
+        x = int2bit
         for layer in self.network_structure:
             x = Dense(layer['hidden'], activation=layer['activation'])(x)
+
+        # x = Dense(32, activation='relu')(x)
+        # Convert 32 binary neurons (bits) into 1 integer input
+        # bit2int = Lambda(lambda x: tf.to_float(tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1)), output_shape=(1,), trainable=False)(x)
 
         output_layer = Dense(1, activation='relu')(x)
 
@@ -186,6 +189,7 @@ class Learned_FC:
             'epochs': self.epochs,
             'lr_decay': self.lr_decay,
             'early_stopping': self.early_stopping,
+            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):

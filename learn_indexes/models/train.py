@@ -4,13 +4,17 @@ import numpy as np
 import time
 import models.utils as utils
 
-def train_network(model, keys, values,
+def train_network(model, keys, values, normalize,
           training_method='start_from_scratch',
           batch_size=10000, epochs=100,
           lr_decay=False, early_stopping=True):
 
-    x_train = keys / float(np.max(keys))
-    y_train = values / float(np.max(values))
+    if normalize:
+        x_train = keys / float(np.max(keys))
+        y_train = values / float(np.max(values))
+    else:
+        x_train = keys
+        y_train = values
 
     # Set up callback functions
     callbacks=[]

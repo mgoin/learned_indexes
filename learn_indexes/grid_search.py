@@ -4,7 +4,7 @@
 import sys
 from testing_framework import Testing_Framework
 from create_data import Distribution
-from models import Learned_FC, Learned_Res, BTree, Hybrid, Hybrid_Original
+from models import Learned_FC, Learned_Res, Learned_Bits, BTree, Hybrid, Hybrid_Original
 from multiprocessing import Pool
 
 
@@ -35,14 +35,16 @@ def main(argv):
     models = [
         ('learned_fc', Learned_FC),
         ('learned_res', Learned_Res),
+        ('learned_bits', Learned_Bits),
         ('btree', BTree),
         # ('hybrid', Hybrid),
         # ('hybrid_orig', Hybrid_Original),
     ]
 
     model_constant_params = {
-        'learned_fc': {'epochs': 25, 'batch_size': 10000},
-        'learned_res': {'epochs': 25, 'batch_size': 10000},
+        'learned_fc': {'epochs': 100, 'batch_size': 10000},
+        'learned_res': {'epochs': 100, 'batch_size': 10000},
+        'learned_bits': {'epochs': 100, 'batch_size': 10000},
         'btree': {},
         # 'hybrid': {},
         # 'hybrid_orig': {},
@@ -51,6 +53,7 @@ def main(argv):
     model_grid_params = {
         'learned_fc': [],
         'learned_res': [],
+        'learned_bits': [],
         'btree': [{}],
         # 'hybrid': [{}],
         # 'hybrid_orig': [{}],
@@ -58,9 +61,9 @@ def main(argv):
 
     # Create tests for learned model
     for loss in ['mean_squared_error', 'mean_absolute_error']:
-        for optimizer in ['sgd', 'adam', 'adadelta']:
-            for activation in ['relu', 'sigmoid', 'linear']:
-                for hidden_layers in [[10,]*2, [10,]*8, [100,]*2, [100,]*8, [1000,]*2, [1000,]*8,]:
+        for optimizer in ['adam', 'adadelta']:
+            for activation in ['relu', 'linear']:
+                for hidden_layers in [[10,]*2, [10,]*8, [100,]*2, [100,]*8, [1000,]*2]:
                     structure = []
                     for num_neurons in hidden_layers:
                         structure.append({
@@ -74,6 +77,11 @@ def main(argv):
                         'optimizer': optimizer, 
                         })
                     model_grid_params['learned_res'].append({
+                        'network_structure': structure, 
+                        'loss': loss, 
+                        'optimizer': optimizer, 
+                        })
+                    model_grid_params['learned_bits'].append({
                         'network_structure': structure, 
                         'loss': loss, 
                         'optimizer': optimizer, 

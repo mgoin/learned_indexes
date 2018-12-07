@@ -1,5 +1,6 @@
 from keras.layers import Input, Dense, add
 from keras.models import Model
+from keras import backend as K
 import numpy as np
 import time
 import os
@@ -37,6 +38,7 @@ class Learned_Res:
 
     def __del__(self):
         os.remove(self.initial_weights.name)
+        K.clear_session()
 
     # Remove all items and reset model
     def clear(self):
@@ -110,7 +112,8 @@ class Learned_Res:
         else:
             raise Exception('"{}" is not a valid training method.'.format(self.training_method))
 
-        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values,
+        model, train_history = trainer.train_network(model=model, keys=self.keys, values=self.values, normalize=True,
+                                                     batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
 
         return model, train_history.history
