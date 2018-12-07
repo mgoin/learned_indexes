@@ -24,7 +24,7 @@ RESULTS_DIR = '../results'
 
 
 class Testing_Framework():
-    def __init__(self, model, distribution, sample_size, train_percent, inference_samples, seed=None):
+    def __init__(self, model, distribution, sample_size, train_percent, inference_samples, seed=None, num_tests=1):
         self.model = model
         self.test_distribution = distribution
         self.sample_size = sample_size
@@ -42,6 +42,7 @@ class Testing_Framework():
         self.post_insert_mean_error = []
         self.training_history = []
         self.seed = seed
+        self.num_tests = num_tests
 
         # Seed before and after since load test data could be using cached results
         np.random.seed(self.seed)
@@ -84,6 +85,7 @@ class Testing_Framework():
             'post_insert_max_error': self.post_insert_max_error,
             'post_insert_mean_error': self.post_insert_mean_error,
             'seed': self.seed,
+            'num_tests': self.num_tests,
             'training_history': self.training_history,
         }
         return results
@@ -95,8 +97,8 @@ class Testing_Framework():
 
         print("Results saved to {}.".format(actual_filename))
 
-    def run_tests(self, num_tests=1):
-        for i in range(num_tests):
+    def run_tests(self):
+        for i in range(self.num_tests):
             train_hist = []
 
             hist = self.time_train()
