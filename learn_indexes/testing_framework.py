@@ -11,6 +11,7 @@ import datetime
 from enum import Enum
 import numpy as np
 import tensorflow as tf
+from keras import backend as K
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -117,6 +118,8 @@ class Testing_Framework():
                 self.post_insert_min_error.append(self.model.min_error)
 
             self.training_history.append(train_hist)
+
+            K.clear_session()
 
 
     def time_train(self):

@@ -8,17 +8,26 @@ from .learned_model_fc import Learned_FC
 
 
 class Hybrid:
-    def __init__(self, index=None, search_method='linear', **kwargs):
+    def __init__(self, index=None, search_method='linear', model=Learned_FC, **kwargs):
         self.index = index
         self._keys = np.empty(0, dtype=np.int32)
         self._values = np.empty(0, dtype=np.int32)
         self.search_method = search_method
         self.model_parameters = kwargs
+        self.model=model
+
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
 
     def clear(self):
         self.index = None
         self._keys = np.empty(0, dtype=np.int32)
         self._values = np.empty(0, dtype=np.int32)
+
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
 
     def insert(self, key, value):
         self._keys = np.append(self._keys, key)
@@ -31,6 +40,7 @@ class Hybrid:
             train_data_y=self._values,
             test_data_x=[],
             test_data_y=[],
+            model_cls=self.model,
             **self.model_parameters,
         )
 
@@ -49,6 +59,7 @@ class Hybrid:
             train_data_y=self._values,
             test_data_x=[],
             test_data_y=[],
+            model_cls=self.model,
             **self.model_parameters,
         )
 
@@ -60,7 +71,7 @@ class Hybrid:
         if self.search_method == 'linear':
             pos = utils.linear_search(self._keys, key, guess)
         elif self.search_method == 'binary':
-            pos = utils.binary_search(self._keys, key, guess, self.get_max_error())
+            pos = utils.binary_search(self._keys, key, guess, self.max_error)
         else:
             raise Exception('Search method "{}" is not valid!'.format(self.search_method))
 
@@ -87,10 +98,13 @@ class Hybrid:
             p = 0
             for s in range(len(stage_nums) - 1):
                 # Pick the model in the next stage
-                p = self.index[s][p].predict(key)[0]
+                p = self.index[s][p].predict(key)
 
                 # Clamp the stage to the valid range
-                p = utils.clamp(int(round(p)), 0, stage_nums[s + 1] - 1)
+                np.clip(p, 0, stage_nums[s + 1] - 1, out=p)
+
+                # Convert p to singular
+                p = p[0]
 
             # Predict position
             predictions[i] = self.index[len(stage_nums) - 1][p].predict(key)
@@ -119,19 +133,34 @@ class Hybrid:
 
     @property
     def max_error(self):
-        return 0.0
+        if self._max_error < 0:
+            self.calculate_error()
+        return self._max_error
 
     @property
     def min_error(self):
-        return 0.0
+        if self._min_error < 0:
+            self.calculate_error()
+        return self._min_error
 
     @property
     def mean_error(self):
-        return 0.0
+        if self._mean_error < 0:
+            self.calculate_error()
+        return self._mean_error
+
+    def calculate_error(self):
+        # Get predicted positions from model
+        predicted_values = self.predict(self._keys)
+        # Calculate error between predictions and ground truth
+        errors = np.abs(predicted_values-self._values)
+        self._max_error = np.max(errors)
+        self._min_error = np.min(errors)
+        self._mean_error = np.mean(errors)
 
     @staticmethod
-    def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x, train_data_y, test_data_x, test_data_y,
-                        **kwargs):
+    def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x,
+            train_data_y, test_data_x, test_data_y, model_cls, **kwargs):
         """Hybrid training structure, 2 stages
 
         Input: int threshold, int stages[], NN complexity
@@ -189,27 +218,30 @@ class Hybrid:
                     test_labels = test_data_y
 
                 # index[i][j] = new NN trained on tmp_records[i][j];
-                index[i][j] = Learned_FC(**kwargs)
+                index[i][j] = model_cls(**kwargs)
                 index_training[i][j] = index[i][j].update(zip(inputs, labels))
 
                 # If the stage is not the last stage
                 # if i < M then
                 if i < stage_length - 1:
+
+                    # Pick model in next stage with output of this model.
+                    # The next stage model does not have to match the training label.
+                    # p = index[i][j](r.key) / stages[i + 1];
+                    p = index[i][j].predict(tmp_inputs[i][j])
+
+                    # Clamp the stage to the valid range
+                    # p = utils.clamp(int(round(p)), 0, stage_nums[i + 1] - 1)
+                    # np.rint(p, out=p)
+                    np.clip(p, 0, stage_nums[i + 1] - 1, out=p)
+
                     # allocate data into training set for models in next stage
                     # for r ∈ tmp records[i][j] do
                     for ind in range(len(tmp_inputs[i][j])):
-                        # Pick model in next stage with output of this model.
-                        # The next stage model does not have to match the training label.
-                        # p = index[i][j](r.key) / stages[i + 1];
-                        p = index[i][j].predict(tmp_inputs[i][j][ind])[0]
-
-                        # Clamp the stage to the valid range
-                        p = utils.clamp(int(round(p)), 0, stage_nums[i + 1] - 1)
-
                         # Add the input and labels to the next stage
                         # tmp_records[i + 1][p].add(r);
-                        tmp_inputs[i + 1][p].append(tmp_inputs[i][j][ind])
-                        tmp_labels[i + 1][p].append(tmp_labels[i][j][ind])
+                        tmp_inputs[i + 1][p[ind]].append(tmp_inputs[i][j][ind])
+                        tmp_labels[i + 1][p[ind]].append(tmp_labels[i][j][ind])
 
         # Replace model with BTree if performance is below a threshold.
         # for j ← 1 to index[M].size do

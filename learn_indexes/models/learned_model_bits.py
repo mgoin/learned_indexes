@@ -1,13 +1,14 @@
-import tensorflow as tf
-from keras.layers import Input, Dense, Conv1D, Lambda, add
-from keras.models import Model
-from keras import backend as K
-import numpy as np
-import time
 import os
 import tempfile
-import models.utils as utils
+
+import numpy as np
+import tensorflow as tf
+from keras.layers import Input, Dense, Lambda
+from keras.models import Model
+
 import models.train as trainer
+import models.utils as utils
+
 
 class Learned_Bits:
     def __init__(self,
@@ -39,7 +40,6 @@ class Learned_Bits:
 
     def __del__(self):
         os.remove(self.initial_weights.name)
-        K.clear_session()
 
     # Remove all items and reset model
     def clear(self):
