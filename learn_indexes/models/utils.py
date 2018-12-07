@@ -71,6 +71,43 @@ def linear_search(data, key, guess):
             else:
                 value += 1
 
+
+def groupby(a, b):
+    # Get argsort indices, to be used to sort a and b in the next steps
+    sidx = b.argsort(kind='mergesort')
+    a_sorted = a[sidx]
+    b_sorted = b[sidx]
+
+    # Get the group limit indices (start, stop of groups)
+    cut_idx = np.flatnonzero(np.r_[True,b_sorted[1:] != b_sorted[:-1],True])
+
+    # Split input array with those start, stop ones
+    out = [a_sorted[i:j] for i,j in zip(cut_idx[:-1],cut_idx[1:])]
+    return out
+
+
+def groupby_perID(a, b):
+    # Get argsort indices, to be used to sort a and b in the next steps
+    sidx = b.argsort(kind='mergesort')
+    a_sorted = a[sidx]
+    b_sorted = b[sidx]
+
+    # Get the group limit indices (start, stop of groups)
+    cut_idx = np.flatnonzero(np.r_[True,b_sorted[1:] != b_sorted[:-1],True])
+
+    # Create cut indices for all unique IDs in b
+    n = b_sorted[-1]+2
+    cut_idxe = np.full(n, cut_idx[-1], dtype=int)
+
+    insert_idx = b_sorted[cut_idx[:-1]]
+    cut_idxe[insert_idx] = cut_idx[:-1]
+    cut_idxe = np.minimum.accumulate(cut_idxe[::-1])[::-1]
+
+    # Split input array with those start, stop ones
+    out = [a_sorted[i:j] for i,j in zip(cut_idxe[:-1],cut_idxe[1:])]
+    return out
+
+
 if __name__ == '__main__':
     data = [1, 6, 19, 40, 59, 69, 81, 91, 103]
     key = 59
@@ -82,5 +119,30 @@ if __name__ == '__main__':
     toc = time.time()
 
     print('{} = {} at {} time: {}'.format(key, data[result], result, tic-toc))
+
+    data = np.array([1, 6, 19, 40, 59, 69, 81, 91, 103])
+    np.random.shuffle(data)
+    idx = np.array([3, 3, 1, 3, 1, 2, 2, 4, 3])
+
+    print(groupby(data, idx))
+    print(groupby_perID(data, idx))
+
+    split_keys = groupby_perID(data, idx)
+    input_key = data
+
+    c_keys = np.concatenate(split_keys)
+    a1 = np.argsort(np.argsort(input_key))
+    a2 = np.argsort(c_keys)
+    r_keys = c_keys[a2][a1]
+
+    print(c_keys[a2])
+    print(input_key[a1])
+
+    print('Concat  {}'.format(c_keys))
+    print('a1      {}'.format(a1))
+    print('a2      {}'.format(a2))
+    print('test    {}'.format(r_keys))
+    print('correct {}'.format(input_key))
+
 
 

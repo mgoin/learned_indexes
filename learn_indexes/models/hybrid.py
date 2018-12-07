@@ -33,8 +33,6 @@ class Hybrid:
         self._keys = np.append(self._keys, key)
         self._values = np.append(self._values, value)
         self.index, train_results = Hybrid._hybrid_training(
-            threshold=[1, 4],
-            use_threshold=[True, False],
             stage_nums=[1, 10],
             train_data_x=self._keys,
             train_data_y=self._values,
@@ -52,8 +50,6 @@ class Hybrid:
         self._values = np.append(self._values, v)
 
         self.index, train_results = Hybrid._hybrid_training(
-            threshold=[1, 4],
-            use_threshold=[True, False],
             stage_nums=[1, 10],
             train_data_x=self._keys,
             train_data_y=self._values,
@@ -90,26 +86,35 @@ class Hybrid:
             input_key = np.full(1, input_key)
 
         stage_nums = [len(i) for i in self.index]
-        predictions = np.zeros_like(input_key)
+        predictions = [None for _ in range(len(stage_nums) + 1)]
+        predictions[0] = np.zeros(len(input_key), dtype=np.int32)
 
-        # For each key
-        for i, key in enumerate(input_key):
-            # For each stage
-            p = 0
-            for s in range(len(stage_nums) - 1):
-                # Pick the model in the next stage
-                p = self.index[s][p].predict(key)
+        # For each stage
+        for s in range(len(stage_nums)):
+            # Split keys by the node to perform the prediction
+            split_keys = utils.groupby_perID(input_key, predictions[s])
 
-                # Clamp the stage to the valid range
-                np.clip(p, 0, stage_nums[s + 1] - 1, out=p)
+            # For each node perform the prediction
+            split_predictions = [np.empty(0, dtype=np.int32) for _ in range(len(split_keys))]
+            for i in range(len(split_keys)):
+                if self.index[s][i] is None:
+                    continue
+                if len(split_keys[i]) == 0:
+                    continue
+                split_predictions[i] = self.index[s][i].predict(split_keys[i])
 
-                # Convert p to singular
-                p = p[0]
+                # Do not clip the last stage
+                if s != len(stage_nums) - 1:
+                    np.clip(split_predictions[i], 0, stage_nums[s + 1] - 1, out=split_predictions[i])
 
-            # Predict position
-            predictions[i] = self.index[len(stage_nums) - 1][p].predict(key)
+            # Recombine the predictions to the original order by sorting the original and recombined keys
+            c_keys = np.concatenate(split_keys)
+            a1 = np.argsort(np.argsort(input_key))
+            a2 = np.argsort(c_keys)
+            c_predictions = np.concatenate(split_predictions)
+            predictions[s+1] = c_predictions[a2][a1]
 
-        return predictions
+        return predictions[-1]
 
     @property
     def results(self):
@@ -159,8 +164,7 @@ class Hybrid:
         self._mean_error = np.mean(errors)
 
     @staticmethod
-    def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x,
-            train_data_y, test_data_x, test_data_y, model_cls, **kwargs):
+    def _hybrid_training(stage_nums, train_data_x, train_data_y, test_data_x, test_data_y, model_cls, threshold=-1, **kwargs):
         """Hybrid training structure, 2 stages
 
         Input: int threshold, int stages[], NN complexity
@@ -220,6 +224,9 @@ class Hybrid:
                 # index[i][j] = new NN trained on tmp_records[i][j];
                 index[i][j] = model_cls(**kwargs)
                 index_training[i][j] = index[i][j].update(zip(inputs, labels))
+                index_training[i][j]['min_error'] = index[i][j].min_error
+                index_training[i][j]['mean_error'] = index[i][j].mean_error
+                index_training[i][j]['max_error'] = index[i][j].max_error
 
                 # If the stage is not the last stage
                 # if i < M then
@@ -255,7 +262,7 @@ class Hybrid:
             mean_abs_err = index[stage_length - 1][i].mean_error
 
             # if index[M][j].max_abs_err > threshold then
-            if mean_abs_err > threshold[stage_length - 1]:
+            if threshold > 0 and mean_abs_err > threshold:
                 # replace model with BTree if mean error > threshold
                 print("Using BTree")
                 # index[M][j] = new B-Tree trained on tmp_records[M][j];
