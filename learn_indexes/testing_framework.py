@@ -207,7 +207,7 @@ def main(argv):
                                           inference_samples=args.inference_samples,
                                           seed=args.seed)
 
-    testing_framework.run_tests(args.number_of_tests)
+    testing_framework.run_tests()
     testing_framework.save_results()
 
     print('Split Idx {}'.format(testing_framework.split_idx))

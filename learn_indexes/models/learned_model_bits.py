@@ -1,25 +1,20 @@
+import tensorflow as tf
+from keras.layers import Input, Dense, Conv1D, Lambda, add
+from keras.models import Model
+from keras import backend as K
+import numpy as np
+import time
 import os
 import tempfile
-
-import numpy as np
-import tensorflow as tf
-from keras.layers import Input, Dense, Lambda
-from keras.models import Model
-
-import models.train as trainer
 import models.utils as utils
-
+import models.train as trainer
 
 class Learned_Bits:
     def __init__(self,
-                 network_structure=[{'activation': 'relu', 'hidden': 500},
-                                    {'activation': 'relu', 'hidden': 500},
-                                    {'activation': 'relu', 'hidden': 500},
-                                    {'activation': 'relu', 'hidden': 500},
-                                    {'activation': 'relu', 'hidden': 500},],
+                 network_structure=[{'activation': 'linear', 'hidden': 100},]*8,
                  optimizer='adam', loss='mean_squared_error',
                  training_method='start_from_scratch', search_method='linear',
-                 batch_size=100000, epochs=1000, lr_decay=False, early_stopping=True,
+                 batch_size=10000, epochs=100, lr_decay=False, early_stopping=True,
                  **kwargs):
         self.network_structure = network_structure
         self.optimizer = optimizer
