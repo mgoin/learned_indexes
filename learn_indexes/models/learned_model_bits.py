@@ -179,7 +179,7 @@ class Learned_Bits:
     @property
     def results(self):
         return {
-            'type': 'learned_model_fc',
+            'type': 'learned_model_bits',
             'network_structure': self.network_structure,
             'optimizer': self.optimizer,
             'loss': self.loss,
