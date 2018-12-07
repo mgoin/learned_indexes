@@ -184,7 +184,6 @@ class Learned_Bits:
             'epochs': self.epochs,
             'lr_decay': self.lr_decay,
             'early_stopping': self.early_stopping,
-            'train_results': self.train_results,
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):
