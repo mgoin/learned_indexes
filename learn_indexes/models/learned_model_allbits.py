@@ -9,7 +9,7 @@ import tempfile
 import models.utils as utils
 import models.train as trainer
 
-class Learned_Bits:
+class Learned_AllBits:
     def __init__(self,
                  network_structure=[{'activation': 'linear', 'hidden': 100},]*8,
                  optimizer='adam', loss='mean_squared_error',
@@ -72,9 +72,9 @@ class Learned_Bits:
         
         # Train model
         if self.training_method == 'train_only_new':
-            self.model, history = self.train(self.model, k, v)
+            self.model_train, history = self.train(self.model_train, k, v)
         else:
-            self.model, history = self.train(self.model, self.keys, self.values)
+            self.model_train, history = self.train(self.model_train, self.keys, self.values)
         return history
 
     # Return the value or the default if the key is not found.
@@ -109,8 +109,10 @@ class Learned_Bits:
     def train(self, model, keys, values):
         if self.training_method == 'start_from_scratch':
             model.load_weights(self.initial_weights.name)
+
+        bit_values = self.model_int2bit.predict(values).reshape(-1, 32)
         
-        model, train_history = trainer.train_network(model=model, keys=keys, values=values, normalize=False,
+        model, train_history = trainer.train_network(model=model, keys=keys, values=bit_values, normalize=False,
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
         self.train_results = train_history.history
@@ -122,7 +124,7 @@ class Learned_Bits:
             key = np.full(1, key)
 
         # Get estimate position from the model
-        predicted_value = self.model.predict(key, batch_size).astype(int)
+        predicted_value = self.model_predict.predict(key, batch_size).astype(int)
         return predicted_value.flatten()
 
     def build_network(self):
@@ -135,16 +137,17 @@ class Learned_Bits:
         for layer in self.network_structure:
             x = Dense(layer['hidden'], activation=layer['activation'])(x)
 
-        # x = Dense(32, activation='relu')(x)
+        output_layer = Dense(32, activation='relu')(x)
+
         # Convert 32 binary neurons (bits) into 1 integer input
-        # bit2int = Lambda(lambda x: tf.to_float(tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1)), output_shape=(1,), trainable=False)(x)
+        bit2int = Lambda(lambda x: tf.to_float(tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1)), output_shape=(1,))(output_layer)
 
-        output_layer = Dense(1, activation='relu')(x)
+        self.model_int2bit = Model(input_layer, int2bit)
+        self.model_predict = Model(input_layer, bit2int)
 
-        self.model = Model(input_layer, output_layer)
-        # Compile model and save initial weights for retraining
-        self.model.compile(optimizer=self.optimizer, loss=self.loss)
-        self.model.save_weights(self.initial_weights.name)
+        self.model_train = Model(input_layer, output_layer)
+        self.model_train.compile(optimizer=self.optimizer, loss=self.loss)
+        self.model_train.save_weights(self.initial_weights.name)
 
     @property
     def max_error(self):
@@ -176,7 +179,7 @@ class Learned_Bits:
     @property
     def results(self):
         return {
-            'type': 'learned_model_bits',
+            'type': 'learned_model_allbits',
             'network_structure': self.network_structure,
             'optimizer': self.optimizer,
             'loss': self.loss,
@@ -189,7 +192,7 @@ class Learned_Bits:
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):
-        self.model.save_weights(filename)
+        self.model_train.save_weights(filename)
 
     def load(self, filename='trained_learned_model_fc.h5'):
-        self.model.load_weights(filename)
+        self.model_train.load_weights(filename)

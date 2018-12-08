@@ -41,10 +41,12 @@ def main(argv):
         # ('hybrid_orig', Hybrid_Original),
     ]
 
+    mcp = {'epochs': 100, 'batch_size': 10000, 
+           'loss': 'mean_squared_error', 'optimizer': 'adam'}
     model_constant_params = {
-        'learned_fc': {'epochs': 100, 'batch_size': 10000},
-        'learned_res': {'epochs': 100, 'batch_size': 10000},
-        'learned_bits': {'epochs': 100, 'batch_size': 10000},
+        'learned_fc': mcp,
+        'learned_res': mcp,
+        'learned_bits': mcp,
         'btree': {},
         # 'hybrid': {},
         # 'hybrid_orig': {},
@@ -60,32 +62,19 @@ def main(argv):
     }
 
     # Create tests for learned model
-    for loss in ['mean_squared_error', 'mean_absolute_error']:
-        for optimizer in ['adam', 'adadelta']:
-            for activation in ['relu', 'linear']:
-                for hidden_layers in [[10,]*2, [10,]*8, [100,]*2, [100,]*8, [1000,]*2]:
-                    structure = []
-                    for num_neurons in hidden_layers:
-                        structure.append({
-                            'activation': activation,
-                            'hidden': num_neurons,
-                        })
+    for training_method in ['start_from_scratch', 'start_from_previous', 'train_only_new']:
+        for activation in ['relu', 'linear']:
+            for hidden_layers in [[100,]*4, [100,]*8, [100,]*12, [100,]*16]:
+                structure = []
+                for num_neurons in hidden_layers:
+                    structure.append({
+                        'activation': activation,
+                        'hidden': num_neurons,
+                    })
 
-                    model_grid_params['learned_fc'].append({
-                        'network_structure': structure, 
-                        'loss': loss, 
-                        'optimizer': optimizer, 
-                        })
-                    model_grid_params['learned_res'].append({
-                        'network_structure': structure, 
-                        'loss': loss, 
-                        'optimizer': optimizer, 
-                        })
-                    model_grid_params['learned_bits'].append({
-                        'network_structure': structure, 
-                        'loss': loss, 
-                        'optimizer': optimizer, 
-                        })
+                model_grid_params['learned_fc'].append({'network_structure': structure, 'training_method': training_method})
+                model_grid_params['learned_res'].append({'network_structure': structure, 'training_method': training_method})
+                model_grid_params['learned_bits'].append({'network_structure': structure, 'training_method': training_method})
 
     grid_search = []
     # Construct grid search

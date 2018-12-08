@@ -65,6 +65,8 @@ class Learned_FC:
     def update(self, collection):
         # Add items to model
         k, v = zip(*collection)
+        k = np.asarray(k)
+        v = np.asarray(v)
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
         

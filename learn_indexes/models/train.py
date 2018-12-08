@@ -21,7 +21,7 @@ def train_network(model, keys, values, normalize,
     if lr_decay:
         callbacks.append(ReduceLROnPlateau(monitor='loss', factor=0.95, patience=10, min_lr=0.00001, verbose=2))
     if early_stopping:
-        callbacks.append(EarlyStopping(monitor='loss', patience=15, verbose=2))
+        callbacks.append(EarlyStopping(monitor='loss', patience=15, restore_best_weights=True, verbose=2))
 
     # Train the network
     train_history = model.fit(x_train, y_train,
