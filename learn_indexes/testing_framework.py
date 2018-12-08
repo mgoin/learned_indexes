@@ -19,7 +19,7 @@ from BTrees.IIBTree import IIBTree
 
 import utils.datastore as ds
 from create_data import Distribution, load_data
-from models import Learned_FC, Learned_Res, Learned_Bits, BTree, Hybrid, Hybrid_Original
+from models import Learned_FC, Learned_Res, Learned_Bits, Learned_AllBits, BTree, Hybrid, Hybrid_Original
 
 RESULTS_DIR = '../results'
 
@@ -190,6 +190,9 @@ def main(argv):
     elif args.model in ('learned_bits'):
         print("Testing with Learned Bits model")
         model = Learned_Bits()
+    elif args.model in ('learned_allbits'):
+        print("Testing with Learned AllBits model")
+        model = Learned_AllBits()
     elif args.model in ('hybrid'):
         print("Testing with Hybrid model")
         model = Hybrid()
