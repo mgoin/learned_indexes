@@ -9,9 +9,16 @@ import tempfile
 import models.utils as utils
 import models.train as trainer
 
+def weighted_binary_loss(y_true, y_pred):
+    diff = K.abs(y_true - y_pred)
+    diff = K.maximum(diff-0.499,0)+0.499
+    # weight = K.arange(1, 32+1, step=1, dtype=tf.float32)
+    # diff = diff * (weight/32)
+    return K.mean(diff)
+
 class Learned_AllBits:
     def __init__(self,
-                 network_structure=[{'activation': 'linear', 'hidden': 100},]*8,
+                 network_structure=[{'activation': 'relu', 'hidden': 1000},]*2,
                  optimizer='adam', loss='mean_squared_error',
                  training_method='start_from_scratch', search_method='linear',
                  batch_size=10000, epochs=100, lr_decay=False, early_stopping=True,
@@ -122,9 +129,9 @@ class Learned_AllBits:
         # Key is just a value, make it an array
         if type(key) != np.ndarray:
             key = np.full(1, key)
-
+        
         # Get estimate position from the model
-        predicted_value = self.model_predict.predict(key, batch_size).astype(int)
+        predicted_value = self.model_predict.predict(key, batch_size)
         return predicted_value.flatten()
 
     def build_network(self):
@@ -140,7 +147,7 @@ class Learned_AllBits:
         output_layer = Dense(32, activation='relu')(x)
 
         # Convert 32 binary neurons (bits) into 1 integer input
-        bit2int = Lambda(lambda x: tf.to_float(tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1)), output_shape=(1,))(output_layer)
+        bit2int = Lambda(lambda x: tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1), output_shape=(1,))(output_layer)
 
         self.model_int2bit = Model(input_layer, int2bit)
         self.model_predict = Model(input_layer, bit2int)
