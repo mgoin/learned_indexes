@@ -21,7 +21,7 @@ def main(argv):
     testing_params = {
         'sample_size': 100000,
         'inference_samples': 10,
-        'train_percent': 1.0,
+        'train_percent': 0.8,
         'num_tests': 3,
     }
 
@@ -37,19 +37,19 @@ def main(argv):
         ('learned_res', Learned_Res),
         ('learned_bits', Learned_Bits),
         ('btree', BTree),
-        # ('hybrid', Hybrid),
-        # ('hybrid_orig', Hybrid_Original),
+        ('hybrid', Hybrid),
+        ('hybrid_orig', Hybrid_Original),
     ]
 
-    mcp = {'epochs': 100, 'batch_size': 10000, 
+    mcp = {'epochs': 100, 'batch_size': 10000,
            'loss': 'mean_squared_error', 'optimizer': 'adam'}
     model_constant_params = {
         'learned_fc': mcp,
         'learned_res': mcp,
         'learned_bits': mcp,
         'btree': {},
-        # 'hybrid': {},
-        # 'hybrid_orig': {},
+        'hybrid': mcp,
+        'hybrid_orig': {},
     }
 
     model_grid_params = {
@@ -57,8 +57,8 @@ def main(argv):
         'learned_res': [],
         'learned_bits': [],
         'btree': [{}],
-        # 'hybrid': [{}],
-        # 'hybrid_orig': [{}],
+        'hybrid': [],
+        'hybrid_orig': [{}],
     }
 
     # Create tests for learned model
@@ -75,6 +75,9 @@ def main(argv):
                 model_grid_params['learned_fc'].append({'network_structure': structure, 'training_method': training_method})
                 model_grid_params['learned_res'].append({'network_structure': structure, 'training_method': training_method})
                 model_grid_params['learned_bits'].append({'network_structure': structure, 'training_method': training_method})
+
+                for stage in ([1, 2], [1, 5], [1, 10], [1, 5, 10]):
+                    model_grid_params['hybrid'].append({'network_structure': structure, 'training_method': training_method, 'stage_nums': stage})
 
     grid_search = []
     # Construct grid search
