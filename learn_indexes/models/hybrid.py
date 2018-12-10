@@ -8,11 +8,12 @@ from .learned_model_fc import Learned_FC
 
 
 class Hybrid:
-    def __init__(self, index=None, search_method='linear', model=Learned_FC, **kwargs):
+    def __init__(self, index=None, stage_nums=[1, 10], search_method='linear', model=Learned_FC, **kwargs):
         self.index = index
         self._keys = np.empty(0, dtype=np.int32)
         self._values = np.empty(0, dtype=np.int32)
         self.search_method = search_method
+        self.stage_nums = stage_nums
         self.model_parameters = kwargs
         self.model=model
 
@@ -33,7 +34,7 @@ class Hybrid:
         self._keys = np.append(self._keys, key)
         self._values = np.append(self._values, value)
         self.index, train_results = Hybrid._hybrid_training(
-            stage_nums=[1, 10],
+            self.stage_nums,
             train_data_x=self._keys,
             train_data_y=self._values,
             test_data_x=[],
@@ -50,7 +51,7 @@ class Hybrid:
         self._values = np.append(self._values, v)
 
         self.index, train_results = Hybrid._hybrid_training(
-            stage_nums=[1, 10],
+            self.stage_nums,
             train_data_x=self._keys,
             train_data_y=self._values,
             test_data_x=[],
@@ -121,6 +122,7 @@ class Hybrid:
         results = {
             'type': 'hybrid',
             'search_method': self.search_method,
+            'stage_numbers': self.stage_nums,
         }
 
         models = [[] for _ in self.index]
