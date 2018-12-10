@@ -48,7 +48,7 @@ class Learned_AllBits:
         self.keys = np.empty(0, dtype=int)
         self.values = np.empty(0, dtype=int)
         self.build_network()
-         
+
         self._min_error = -1.0
         self._max_error = -1.0
         self._mean_error = -1.0
@@ -76,7 +76,7 @@ class Learned_AllBits:
         v = np.asarray(v)
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
-        
+
         # Train model
         if self.training_method == 'train_only_new':
             self.model_train, history = self.train(self.model_train, k, v)
@@ -118,7 +118,7 @@ class Learned_AllBits:
             model.load_weights(self.initial_weights.name)
 
         bit_values = self.model_int2bit.predict(values).reshape(-1, 32)
-        
+
         model, train_history = trainer.train_network(model=model, keys=keys, values=bit_values, normalize=False,
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
@@ -128,8 +128,8 @@ class Learned_AllBits:
     def predict(self, key, batch_size=1000):
         # Key is just a value, make it an array
         if type(key) != np.ndarray:
-            key = np.full(1, key)
-        
+            key = np.asarray(key).reshape(-1)
+
         # Get estimate position from the model
         predicted_value = self.model_predict.predict(key, batch_size)
         return predicted_value.flatten()
@@ -201,5 +201,4 @@ class Learned_AllBits:
     def save(self, filename='trained_learned_model_fc.h5'):
         self.model_train.save_weights(filename)
 
-    def load(self, filename='trained_learned_model_fc.h5'):
-        self.model_train.load_weights(filename)
+    def load(se

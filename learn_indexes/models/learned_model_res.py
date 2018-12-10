@@ -69,7 +69,7 @@ class Learned_Res:
         v = np.asarray(v)
         self.keys = np.append(self.keys, k)
         self.values = np.append(self.values, v)
-                
+
         # Train model
         if self.training_method == 'train_only_new':
             self.model, history = self.train(self.model, k, v)
@@ -119,7 +119,7 @@ class Learned_Res:
     def predict(self, key, batch_size=1000):
         # Key is just a value, make it an array
         if type(key) != np.ndarray:
-            key = np.full(1, key)
+            key = np.asarray(key).reshape(-1)
 
         normalized_key = key / float(np.max(self.keys))
 
@@ -136,7 +136,7 @@ class Learned_Res:
         x = input_layer
         for layer in self.network_structure:
             x = Dense(layer['hidden'], activation=layer['activation'])(x)
-        
+
         x = input_layer
         for i, layer in enumerate(self.network_structure):
             if i%2 == 1:

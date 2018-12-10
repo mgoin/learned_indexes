@@ -162,7 +162,6 @@ def read_all_data_from_folder(path):
         # Loop though each file
         for filename in filenames:
             name, ext = os.path.splitext(filename)
-            print('{} {} {} {}'.format(foldername, filename, name, ext))
 
             filepath = os.path.join(foldername, filename)
             if ext == '.json':

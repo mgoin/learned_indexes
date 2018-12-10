@@ -15,10 +15,18 @@ class Hybrid:
         self.search_method = search_method
         self.train_results = None
 
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
+
     def clear(self):
         self.index = None
         self._keys = np.empty(0, dtype=int)
         self._values = np.empty(0, dtype=int)
+
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
 
     def insert(self, key, value):
         self._keys = np.append(self._keys, key)
@@ -132,6 +140,33 @@ class Hybrid:
             'search_method': self.search_method,
             'train_results': self.train_results,
         }
+
+    @property
+    def max_error(self):
+        if self._max_error < 0:
+            self.calculate_error()
+        return self._max_error
+
+    @property
+    def min_error(self):
+        if self._min_error < 0:
+            self.calculate_error()
+        return self._min_error
+
+    @property
+    def mean_error(self):
+        if self._mean_error < 0:
+            self.calculate_error()
+        return self._mean_error
+
+    def calculate_error(self):
+        # Get predicted positions from model
+        predicted_values = self.predict(self._keys)
+        # Calculate error between predictions and ground truth
+        errors = np.abs(predicted_values-self._values)
+        self._max_error = np.max(errors)
+        self._min_error = np.min(errors)
+        self._mean_error = np.mean(errors)
 
     @staticmethod
     def _hybrid_training(threshold, use_threshold, stage_nums, train_data_x, train_data_y, test_data_x, test_data_y,
