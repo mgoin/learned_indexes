@@ -76,8 +76,17 @@ def main(argv):
                 model_grid_params['learned_res'].append({'network_structure': structure, 'training_method': training_method})
                 model_grid_params['learned_bits'].append({'network_structure': structure, 'training_method': training_method})
 
-                for stage in ([1, 2], [1, 5], [1, 10], [1, 5, 10]):
-                    model_grid_params['hybrid'].append({'network_structure': structure, 'training_method': training_method, 'stage_nums': stage})
+    for activation in ['relu', 'linear']:
+        for hidden_layers in [[100,]*4, [100,]*8, [100,]*12, [100,]*16]:
+            structure = []
+            for num_neurons in hidden_layers:
+                structure.append({
+                    'activation': activation,
+                    'hidden': num_neurons,
+                })
+
+            for stage in ([1, 2], [1, 5], [1, 10], [1, 5, 10]):
+                model_grid_params['hybrid'].append({'network_structure': structure, 'training_method': 'start_from_scratch', 'stage_nums': stage})
 
     grid_search = []
     # Construct grid search
