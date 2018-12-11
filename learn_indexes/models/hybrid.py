@@ -8,14 +8,14 @@ from .learned_model_fc import Learned_FC
 
 
 class Hybrid:
-    def __init__(self, index=None, stage_nums=[1, 10], search_method='linear', model=Learned_FC, **kwargs):
+    def __init__(self, index=None, stage_nums=(1, 10), search_method='linear', model=Learned_FC, **kwargs):
         self.index = index
         self._keys = np.empty(0, dtype=np.int32)
         self._values = np.empty(0, dtype=np.int32)
         self.search_method = search_method
         self.stage_nums = stage_nums
         self.model_parameters = kwargs
-        self.model=model
+        self.model = model
 
         self._min_error = -1.0
         self._max_error = -1.0
