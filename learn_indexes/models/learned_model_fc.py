@@ -12,13 +12,14 @@ import models.utils as utils
 class Learned_FC:
     def __init__(self,
                  network_structure=[{'activation': 'relu', 'hidden': 100},]*8,
-                 optimizer='adam', loss='mean_squared_error',
+                 optimizer='adam', loss='mean_squared_error', initializer='glorot_uniform',
                  training_method='start_from_scratch', search_method='linear',
                  batch_size=10000, epochs=100, lr_decay=False, early_stopping=True,
                  **kwargs):
         self.network_structure = network_structure
         self.optimizer = optimizer
         self.loss = loss
+        self.initializer = initializer
         self.training_method = training_method
         self.search_method = search_method
         self.batch_size = batch_size
@@ -114,6 +115,9 @@ class Learned_FC:
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
         self.train_results = train_history.history
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
         return model, train_history.history
 
     def predict(self, key, batch_size=1000):
@@ -135,9 +139,9 @@ class Learned_FC:
 
         x = input_layer
         for layer in self.network_structure:
-            x = Dense(layer['hidden'], activation=layer['activation'])(x)
+            x = Dense(layer['hidden'], activation=layer['activation'], kernel_initializer=self.initializer)(x)
 
-        output_layer = Dense(1, activation='relu')(x)
+        output_layer = Dense(1, activation='relu', kernel_initializer=self.initializer)(x)
 
         self.model = Model(input_layer, output_layer)
         # Compile model and save initial weights for retraining

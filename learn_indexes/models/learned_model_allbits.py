@@ -18,14 +18,15 @@ def weighted_binary_loss(y_true, y_pred):
 
 class Learned_AllBits:
     def __init__(self,
-                 network_structure=[{'activation': 'relu', 'hidden': 1000},]*2,
-                 optimizer='adam', loss='mean_squared_error',
+                 network_structure=[{'activation': 'relu', 'hidden': 500},]*6,
+                 optimizer='adam', loss='mean_squared_error', initializer='glorot_uniform',
                  training_method='start_from_scratch', search_method='linear',
                  batch_size=10000, epochs=100, lr_decay=False, early_stopping=True,
                  **kwargs):
         self.network_structure = network_structure
         self.optimizer = optimizer
         self.loss = loss
+        self.initializer = initializer
         self.training_method = training_method
         self.search_method = search_method
         self.batch_size = batch_size
@@ -123,6 +124,9 @@ class Learned_AllBits:
                                                      batch_size=self.batch_size, epochs=self.epochs,
                                                      lr_decay=self.lr_decay, early_stopping=self.early_stopping)
         self.train_results = train_history.history
+        self._min_error = -1.0
+        self._max_error = -1.0
+        self._mean_error = -1.0
         return model, train_history.history
 
     def predict(self, key, batch_size=1000):
@@ -142,9 +146,9 @@ class Learned_AllBits:
 
         x = int2bit
         for layer in self.network_structure:
-            x = Dense(layer['hidden'], activation=layer['activation'])(x)
+            x = Dense(layer['hidden'], activation=layer['activation'], kernel_initializer=self.initializer)(x)
 
-        output_layer = Dense(32, activation='relu')(x)
+        output_layer = Dense(32, activation='relu', kernel_initializer=self.initializer)(x)
 
         # Convert 32 binary neurons (bits) into 1 integer input
         bit2int = Lambda(lambda x: tf.reduce_sum(tf.bitwise.left_shift(tf.to_int32(tf.rint(tf.clip_by_value(x, 0, 1))), tf.range(32)), 1), output_shape=(1,))(output_layer)
@@ -199,6 +203,7 @@ class Learned_AllBits:
         }
 
     def save(self, filename='trained_learned_model_fc.h5'):
-        self.model_train.save_weights(filename)
+        self.model_predict.save_weights(filename)
 
-    def load(se
+    def load(self, filename='trained_learned_model_fc.h5'):
+        self.model_predict.load_weights(filename)
