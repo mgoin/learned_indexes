@@ -201,4 +201,5 @@ class Learned_AllBits:
     def save(self, filename='trained_learned_model_fc.h5'):
         self.model_train.save_weights(filename)
 
-    def load(se
+    def load(self, filename='trained_learned_model_fc.h5'):
+        self.model_train.load_weights(filename)
