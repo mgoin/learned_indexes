@@ -86,7 +86,9 @@ def main(argv):
                 })
 
             for stage in ([1, 2], [1, 5], [1, 10], [1, 5, 10]):
-                model_grid_params['hybrid'].append({'network_structure': structure, 'training_method': 'start_from_scratch', 'stage_nums': stage})
+                model_grid_params['hybrid'].append({'model': Learned_FC, 'network_structure': structure, 'training_method': 'start_from_scratch', 'stage_nums': stage})
+                model_grid_params['hybrid'].append({'model': Learned_Res, 'network_structure': structure, 'training_method': 'start_from_scratch', 'stage_nums': stage})
+                model_grid_params['hybrid'].append({'model': Learned_Bits, 'network_structure': structure, 'training_method': 'start_from_scratch', 'stage_nums': stage})
 
     grid_search = []
     # Construct grid search
