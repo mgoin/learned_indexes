@@ -78,6 +78,8 @@ def expand_results(data, result):
         except:
             pass
 
+        r['training_history'] = r['training_history'][i]
+
         data.append(r)
 
     return data
